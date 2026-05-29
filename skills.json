@@ -1,8 +1,8 @@
 {
     "version": "1.0",
-    "generated": "2026-05-29T15:40:00Z",
+    "generated": "2026-05-29T18:47:47Z",
     "repo": "aaronjmars/aeon",
-    "total": 171,
+    "total": 172,
     "categories": {
         "research": "Research & Content",
         "dev": "Dev & Code",
@@ -2062,6 +2062,18 @@
             "sha": "0000000",
             "updated": "2026-05-29",
             "install": "./add-skill aaronjmars/aeon fleet-scorecard"
+        },
+        {
+            "slug": "fund-flow",
+            "name": "Fund Flow",
+            "description": "Trace where funds move to (or came from) across multiple hops from a Base address and render a Mermaid flow graph. Keyless \u2014 no explorer key needed.",
+            "category": "crypto",
+            "schedule": "workflow_dispatch",
+            "var": "",
+            "files": 0,
+            "sha": "",
+            "updated": "",
+            "install": "./add-skill aaronjmars/aeon fund-flow"
         }
     ],
     "install_all": "./add-skill aaronjmars/aeon --all",
