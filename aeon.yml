@@ -38,6 +38,7 @@ skills:
 
   # --- Hound onchain investigation (on-demand; var = address / tx hash) ---
   rug-scan: { enabled: false, schedule: "workflow_dispatch", var: "" } # var: token address — rug-pull risk verdict
+  investigation-report: { enabled: false, schedule: "workflow_dispatch", var: "" } # var: token address — composite rug+audit+deployer+holders report
   fund-flow: { enabled: false, schedule: "workflow_dispatch", var: "" } # var: address — trace multi-hop fund movement (Mermaid graph)
   linked-wallets: { enabled: false, schedule: "workflow_dispatch", var: "" } # var: address — cluster same-entity wallets (shared-funder + co-spend)
   lp-lock-check: { enabled: false, schedule: "workflow_dispatch", var: "" } # var: token address — LP lock / rug-pull risk check

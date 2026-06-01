@@ -2,7 +2,7 @@
     "version": "1.0",
     "generated": "2026-05-29T17:40:44Z",
     "repo": "aaronjmars/aeon",
-    "total": 176,
+    "total": 177,
     "categories": {
         "research": "Research & Content",
         "dev": "Dev & Code",
@@ -2122,6 +2122,18 @@
             "sha": "",
             "updated": "",
             "install": "./add-skill aaronjmars/aeon fund-flow"
+        },
+        {
+            "slug": "investigation-report",
+            "name": "Investigation Report",
+            "description": "One-shot composite investigation of a Base token \u2014 runs rug-scan, contract-audit, deployer-trace and holder-concentration and merges them into a single report with an at-a-glance verdict. Keyless core; a Basescan key deepens it.",
+            "category": "crypto",
+            "schedule": "workflow_dispatch",
+            "var": "",
+            "files": 0,
+            "sha": "",
+            "updated": "",
+            "install": "./add-skill aaronjmars/aeon investigation-report"
         }
     ],
     "install_all": "./add-skill aaronjmars/aeon --all",
