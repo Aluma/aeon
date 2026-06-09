@@ -705,9 +705,14 @@ jobs:
           MCP_FLAGS=()
           if [ -f .mcp.json ] && jq -e '.mcpServers' .mcp.json >/dev/null 2>&1; then
             MCP_MISSING=""
+            # ALL_SECRETS is toJSON(secrets). Guard the empty case via a temp var —
+            # NOT the inline ${ALL_SECRETS:-{}} form: bash closes ${...} at the first
+            # '}', so the default is just '{' and a stray '}' gets appended to the
+            # value, corrupting the JSON (jq: parse error "Unmatched '}'").
+            SECRETS_JSON="${ALL_SECRETS:-}"; [ -z "$SECRETS_JSON" ] && SECRETS_JSON='{}'
             for v in $(grep -oE '\$\{[A-Z_][A-Z0-9_]*\}' .mcp.json | sed -E 's/[${}]//g' | sort -u); do
               [ -n "${!v:-}" ] && continue                                  # already in env (built-in)
-              val="$(jq -r --arg k "$v" '.[$k] // empty' <<<"${ALL_SECRETS:-{}}")"
+              val="$(jq -r --arg k "$v" '.[$k] // empty' <<<"$SECRETS_JSON")"
               if [ -n "$val" ]; then export "$v=$val"; else MCP_MISSING="$MCP_MISSING $v"; fi
             done
             if [ -n "$MCP_MISSING" ]; then
