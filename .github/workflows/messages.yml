@@ -491,6 +491,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_GLOBAL || secrets.GITHUB_TOKEN }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TELEGRAM_INSTANT_NATIVE: ${{ vars.TELEGRAM_INSTANT_NATIVE }}
           DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
           DISCORD_CHANNEL_ID: ${{ secrets.DISCORD_CHANNEL_ID }}
           DISCORD_ALLOWED_AUTHOR_ID: ${{ vars.DISCORD_ALLOWED_AUTHOR_ID || secrets.DISCORD_ALLOWED_AUTHOR_ID }}
@@ -502,11 +503,18 @@ jobs:
 
           # --- Telegram (collect ALL pending updates) ---
           if [ -n "${TELEGRAM_BOT_TOKEN:-}" ] && [ -n "${TELEGRAM_CHAT_ID:-}" ]; then
+            # Native instant mode (telegram-instant.yml) holds a long-poll open and
+            # owns getUpdates. Two concurrent getUpdates would steal each other's
+            # updates via the offset ack, so the poller cedes Telegram when it's on.
+            NATIVE_INSTANT=false
+            case "${TELEGRAM_INSTANT_NATIVE:-}" in true|1|yes|on) NATIVE_INSTANT=true ;; esac
             # A webhook and getUpdates are mutually exclusive: once a webhook is
             # set (instant mode, see webhook/), getUpdates returns 409. Detect it
             # and skip polling — the Worker delivers via repository_dispatch.
             WEBHOOK_URL=$(curl -s "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getWebhookInfo" | jq -r '.result.url // empty')
-            if [ -n "$WEBHOOK_URL" ]; then
+            if [ "$NATIVE_INSTANT" = "true" ]; then
+              echo "Native instant mode active — the long-poll loop (telegram-instant.yml) owns Telegram; skipping poll"
+            elif [ -n "$WEBHOOK_URL" ]; then
               echo "Telegram webhook active — skipping poll (instant mode delivers via repository_dispatch)"
             else
               # Fetch messages AND callback_query taps. allowed_updates now includes
@@ -671,6 +679,25 @@ jobs:
               git rebase --abort 2>/dev/null || true
               sleep "$k"
             done
+          fi
+
+      # Native instant mode (opt-in): keep exactly one Telegram long-poll loop
+      # alive. This */5 tick is the revival heartbeat — if a run was killed
+      # (GitHub maintenance, cancellation, crash), start a fresh one; if one is
+      # already in-progress or queued, do nothing. The loop's concurrency group
+      # (telegram-instant-longpoll) guarantees at most one runs at a time.
+      - name: Keepalive — native Telegram long-poll
+        if: vars.TELEGRAM_INSTANT_NATIVE == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GH_GLOBAL || secrets.GITHUB_TOKEN }}
+        run: |
+          ACTIVE=$(gh run list --workflow telegram-instant.yml --status in_progress --json databaseId --jq 'length' 2>/dev/null || echo 0)
+          QUEUED=$(gh run list --workflow telegram-instant.yml --status queued --json databaseId --jq 'length' 2>/dev/null || echo 0)
+          if [ "${ACTIVE:-0}" -eq 0 ] && [ "${QUEUED:-0}" -eq 0 ]; then
+            echo "No native long-poll running — starting one."
+            gh workflow run telegram-instant.yml || echo "::warning::could not start telegram-instant.yml"
+          else
+            echo "Native long-poll already alive (in_progress=$ACTIVE queued=$QUEUED) — nothing to do."
           fi
 
   route:

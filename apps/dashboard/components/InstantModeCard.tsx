@@ -104,6 +104,19 @@ export function InstantModeCard({ repo, sessionBotToken }: InstantModeCardProps)
             Cloudflare Worker webhook into your own account - no shared infrastructure.
           </p>
 
+          {/* Native alternative — no external system at all */}
+          <div className="border border-[rgba(250,250,250,0.10)] bg-aeon-bg/40 px-3 py-2.5">
+            <div className="text-[11px] font-mono text-eva-green mb-1">⚡ No Cloudflare? Native long-poll</div>
+            <p className="text-[12px] text-primary-70 leading-relaxed">
+              Want instant replies with <span className="text-primary-100">zero external systems</span>? Set the
+              repo variable <code className="text-primary-100">TELEGRAM_INSTANT_NATIVE=true</code> and a workflow
+              holds a <code className="text-primary-70">getUpdates</code> long-poll open inside your own Actions.{' '}
+              <span className="text-primary-100">Free &amp; unlimited on public repos</span>; on private repos it
+              burns the 2000-min/month tier, so the Worker below is better there. Guide:{' '}
+              <span className="font-mono text-primary-70">docs/telegram-instant.md</span>.
+            </p>
+          </div>
+
           {/* 1 - deploy */}
           <div>
             <div className="text-[10px] font-mono uppercase tracking-[0.18em] text-primary-40 mb-2">1 · Deploy the Worker</div>

@@ -511,13 +511,17 @@ Aeon publishes articles to a GitHub Pages gallery and an RSS feed.
 
 ### Telegram instant mode
 
-Replies aren't instant by default - Aeon runs on GitHub Actions and polls Telegram every 5 minutes. That's by design: it's built for autonomous background work, not real-time chat. For ~1-second replies, deploy the self-contained Cloudflare Worker in [`apps/webhook/`](apps/webhook/) into your own Cloudflare account (no shared infra, no credential custody) - a one-time setup of about 5 minutes:
+Replies aren't instant by default - Aeon runs on GitHub Actions and polls Telegram every 5 minutes. That's by design: it's built for autonomous background work, not real-time chat. For ~1-second replies there are **two** options - pick by whether you want zero external systems or zero continuous Actions minutes:
+
+**① Native long-poll - instant, no external system.** Set the repo variable `TELEGRAM_INSTANT_NATIVE=true` and a dedicated workflow ([`telegram-instant.yml`](.github/workflows/telegram-instant.yml)) holds a `getUpdates` long-poll open inside your own Actions and acts on each update as it lands - no Worker, no third party. It re-launches itself before the 6h job cap, and the `*/5` tick revives it if a run is killed. **Free and unlimited on public repos**; on private repos a 24/7 loop burns the 2000-min/month free tier, so use option ② there. Enable it from **Actions → Telegram Instant → Run workflow** (or wait for the next tick).
+
+**② Cloudflare Worker - instant, no continuous Actions minutes.** Deploy the self-contained Worker in [`apps/webhook/`](apps/webhook/) into your own Cloudflare account (no shared infra, no credential custody) - a one-time setup of about 5 minutes:
 
 [![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/aaronjmars/aeon/tree/main/apps/webhook)
 
-The deploy wizard prompts for the four variables (`TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `GITHUB_REPO`, `GITHUB_TOKEN`) and stores them as encrypted Worker secrets, so the Worker comes out configured - then point your bot at it with `setWebhook`. The dashboard walks through all three steps with one-click webhook registration: **Settings → Credentials → Telegram → ⚡ Instant replies**. The button needs a **public** source repo - on a private fork, mirror `apps/webhook/` to a small public repo and point the button URL there.
+The deploy wizard prompts for the variables (`TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `TELEGRAM_WEBHOOK_SECRET`, `GITHUB_REPO`, `GITHUB_TOKEN`) and stores them as encrypted Worker secrets, so the Worker comes out configured - then point your bot at it with `setWebhook`. The dashboard walks through all three steps with one-click webhook registration: **Settings → Credentials → Telegram → ⚡ Instant replies**. The button needs a **public** source repo - on a private fork, mirror `apps/webhook/` to a small public repo and point the button URL there.
 
-Full guide: [`apps/webhook/README.md`](apps/webhook/README.md). The poller detects an active webhook (`getWebhookInfo`) and skips Telegram polling automatically, so the two never conflict. The Worker also routes slash commands, button taps, and reply follow-ups (see [docs/telegram-commands.md](docs/telegram-commands.md)) — **redeploy it after updating** to pick those up.
+Both modes route slash commands, button taps, and reply follow-ups (see [docs/telegram-commands.md](docs/telegram-commands.md)), not just plain messages, and are mutually exclusive and self-arbitrating: a Cloudflare webhook wins (both the poller and the native loop detect it via `getWebhookInfo` and stand down); native mode otherwise owns `getUpdates` and the poller cedes its Telegram branch. Full guide: [docs/telegram-instant.md](docs/telegram-instant.md) · [`apps/webhook/README.md`](apps/webhook/README.md).
 
 ### Remote dashboard access
 

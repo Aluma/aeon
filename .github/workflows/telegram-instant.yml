@@ -1,0 +1,190 @@
+name: Telegram Instant (native long-poll)
+run-name: "telegram: native instant long-poll"
+
+# Native instant mode — webhook-grade (~1s) Telegram delivery with NO external
+# system. Where the Cloudflare Worker in apps/webhook/ turns Telegram *push* into
+# a repository_dispatch, this keeps a single self-rearming GitHub Actions job
+# holding a long-poll (getUpdates?timeout=50) open and acts on each update the
+# instant it lands — no server to deploy, no credential custody, no third party.
+#
+# It re-launches itself before the ~6h job cap (handing off the Telegram offset),
+# and the messages.yml */5 "tick" revives it within one cron interval if a run is
+# ever killed. The result: continuous coverage entirely inside the fork's own
+# GitHub Actions.
+#
+# ── OFF by default ──────────────────────────────────────────────────────────
+# Enable by setting the repo VARIABLE  TELEGRAM_INSTANT_NATIVE = true
+# (Settings → Secrets and variables → Actions → Variables), then either run this
+# workflow once from the Actions tab or wait for the next */5 tick to start it.
+#
+# Cost: a long-poll job is mostly idle (blocked on the socket), but it does hold
+# a runner continuously. On PUBLIC repos GitHub Actions minutes are free and
+# unlimited — this is effectively free. On PRIVATE repos it bills against the
+# 2000-min/month free tier (~33h), so a 24/7 loop will exhaust it; there, prefer
+# the Cloudflare Worker. Disabling the variable stops the loop within ~5 min
+# (it re-reads the toggle mid-run and won't re-arm once it's off).
+#
+# Mutually exclusive with a Cloudflare webhook (this loop defers if one is set —
+# getUpdates 409s against an active webhook) and with the poller (messages.yml
+# cedes Telegram polling whenever this variable is on).
+
+on:
+  workflow_dispatch:
+    inputs:
+      offset:
+        description: 'Telegram getUpdates offset to resume from (internal handoff — leave blank)'
+        required: false
+        type: string
+
+permissions:
+  contents: write
+  actions: write
+
+# Singleton: at most one loop alive. A redundantly-dispatched run QUEUES behind
+# the active one (never cancels it) and takes over when it ends — the natural
+# successor. cancel-in-progress:false is deliberate.
+concurrency:
+  group: telegram-instant-longpoll
+  cancel-in-progress: false
+
+jobs:
+  longpoll:
+    runs-on: ubuntu-latest
+    # Comfortably under GitHub's 6h hard job cap; the loop below stops itself at
+    # 5h and hands off, leaving headroom for the re-arm dispatch.
+    timeout-minutes: 315
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v7
+        with:
+          token: ${{ secrets.GH_GLOBAL || secrets.GITHUB_TOKEN }}
+
+      - name: Long-poll Telegram and act on updates
+        env:
+          GH_TOKEN: ${{ secrets.GH_GLOBAL || secrets.GITHUB_TOKEN }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          INSTANT_NATIVE: ${{ vars.TELEGRAM_INSTANT_NATIVE }}
+          START_OFFSET: ${{ inputs.offset }}
+        run: |
+          set -uo pipefail
+
+          # --- Guards ------------------------------------------------------------
+          is_true() { case "${1:-}" in true|1|yes|on) return 0 ;; *) return 1 ;; esac; }
+
+          if ! is_true "${INSTANT_NATIVE:-}"; then
+            echo "TELEGRAM_INSTANT_NATIVE not enabled — exiting (no re-arm)."; exit 0
+          fi
+          if [ -z "${TELEGRAM_BOT_TOKEN:-}" ] || [ -z "${TELEGRAM_CHAT_ID:-}" ]; then
+            echo "Telegram not configured (TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID) — exiting."; exit 0
+          fi
+
+          API="https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}"
+          # A Cloudflare webhook takes precedence — long-poll would 409 against it.
+          WEBHOOK_URL=$(curl -s "${API}/getWebhookInfo" | jq -r '.result.url // empty')
+          if [ -n "$WEBHOOK_URL" ]; then
+            echo "Webhook active ($WEBHOOK_URL) — native long-poll defers to it. Exiting (no re-arm)."; exit 0
+          fi
+
+          git config user.name "aeonframework"
+          git config user.email "aeonframework@proton.me"
+
+          # message + callback_query, URL-encoded: ["message","callback_query"]
+          ALLOWED_UPDATES='%5B%22message%22%2C%22callback_query%22%5D'
+
+          # Resume from a handed-off offset if given; otherwise start unset so the
+          # first call returns any pending backlog (same semantics as the poller —
+          # nothing sent during a revival gap is dropped).
+          OFFSET="${START_OFFSET:-}"
+          echo "Starting native long-poll (offset='${OFFSET:-<pending>}')"
+
+          # Persist memory writes made by inline routing (snooze/mute/save/schedule),
+          # mirroring the poller's commit step. Only commits when something changed.
+          commit_memory() {
+            git add memory/snoozes.log memory/mutes.log memory/saved.md aeon.yml 2>/dev/null || true
+            git diff --cached --quiet && return 0
+            git commit -m "chore(telegram): record snooze/mute/save/schedule from native instant" || return 0
+            for k in 1 2 3; do
+              if git pull --rebase origin main 2>/dev/null && git push origin HEAD 2>/dev/null; then return 0; fi
+              git rebase --abort 2>/dev/null || true
+              sleep "$k"
+            done
+          }
+
+          DEADLINE=$(( $(date -u +%s) + 5*3600 ))   # ~5h, then hand off
+          ITER=0
+
+          while [ "$(date -u +%s)" -lt "$DEADLINE" ]; do
+            ITER=$((ITER + 1))
+
+            # Kill-switch: every ~5 min re-read the toggle so disabling it stops the
+            # loop promptly (env vars are frozen at job start). Default to "true" on a
+            # read failure so a transient API hiccup never shuts us down by accident.
+            if [ $((ITER % 6)) -eq 0 ]; then
+              STILL=$(gh api "repos/${GITHUB_REPOSITORY}/actions/variables/TELEGRAM_INSTANT_NATIVE" --jq '.value' 2>/dev/null || echo "true")
+              if ! is_true "$STILL"; then
+                echo "TELEGRAM_INSTANT_NATIVE turned off — exiting (no re-arm)."; exit 0
+              fi
+            fi
+
+            if [ -n "$OFFSET" ]; then OFF_PARAM="&offset=${OFFSET}"; else OFF_PARAM=""; fi
+            RESP=$(curl -s --max-time 70 "${API}/getUpdates?timeout=50${OFF_PARAM}&allowed_updates=${ALLOWED_UPDATES}")
+
+            OK=$(echo "$RESP" | jq -r '.ok // false' 2>/dev/null)
+            if [ "$OK" != "true" ]; then
+              CODE=$(echo "$RESP" | jq -r '.error_code // empty' 2>/dev/null)
+              # 409 => a webhook got set while we were running; stand down for it.
+              if [ "$CODE" = "409" ]; then echo "getUpdates 409 (webhook set) — exiting (no re-arm)."; exit 0; fi
+              echo "getUpdates transient error (code=${CODE:-net}) — backing off 5s"; sleep 5; continue
+            fi
+
+            COUNT=$(echo "$RESP" | jq '.result | length')
+            [ "$COUNT" -eq 0 ] && continue
+
+            for ((i=0; i<COUNT; i++)); do
+              UID=$(echo "$RESP" | jq -r ".result[$i].update_id")
+              OFFSET=$((UID + 1))   # advance past this update; next getUpdates acks it
+
+              # --- Callback query (inline button tap) ---
+              CB_DATA=$(echo "$RESP" | jq -r ".result[$i].callback_query.data // empty")
+              if [ -n "$CB_DATA" ]; then
+                CB_CHAT=$(echo "$RESP" | jq -r ".result[$i].callback_query.message.chat.id // empty")
+                CB_ID=$(echo "$RESP" | jq -r ".result[$i].callback_query.id // empty")
+                # Stop the client spinner immediately (safe pre-ack — no action yet).
+                [ -n "$CB_ID" ] && curl -s -X POST "${API}/answerCallbackQuery" -d "callback_query_id=$CB_ID" >/dev/null 2>&1 || true
+                if [ "$CB_CHAT" = "$TELEGRAM_CHAT_ID" ]; then
+                  bash scripts/telegram-route.sh callback "$CB_DATA" || echo "::warning::route callback failed: $CB_DATA"
+                fi
+                continue
+              fi
+
+              # --- Message ---
+              TEXT=$(echo "$RESP" | jq -r ".result[$i].message.text // empty")
+              CHAT=$(echo "$RESP" | jq -r ".result[$i].message.chat.id // empty")
+              [ -z "$TEXT" ] && continue
+              [ "$CHAT" != "$TELEGRAM_CHAT_ID" ] && continue
+
+              REPLY_TO=$(echo "$RESP" | jq -r ".result[$i].message.reply_to_message.text // empty")
+              if [[ "$REPLY_TO" =~ \[[a-zA-Z0-9_-]+::[a-zA-Z0-9_-]+\] ]]; then
+                # Answer to a force_reply prompt — routed, no LLM.
+                bash scripts/telegram-route.sh reply "$REPLY_TO" "$TEXT" || echo "::warning::route reply failed"
+              elif [[ "$TEXT" == /* ]]; then
+                # Slash command / deep link — routed, no LLM (near-instant reply).
+                bash scripts/telegram-route.sh command "$TEXT" || echo "::warning::route command failed: $TEXT"
+              else
+                # Plain text — hand to Claude via the existing run job.
+                echo "Dispatching plain message to Claude: $TEXT"
+                gh workflow run messages.yml -f source=telegram -f message="$TEXT" || echo "::warning::dispatch failed"
+              fi
+            done
+
+            commit_memory
+          done
+
+          echo "Long-poll budget reached — handing off to a fresh run at offset=${OFFSET:-<pending>}"
+          if [ -n "$OFFSET" ]; then
+            gh workflow run telegram-instant.yml -f offset="$OFFSET" || echo "::warning::re-arm dispatch failed"
+          else
+            gh workflow run telegram-instant.yml || echo "::warning::re-arm dispatch failed"
+          fi
