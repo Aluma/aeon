@@ -5,18 +5,13 @@ type: Reference
 # Products
 
 Config for the product-aware skills: `bd-radar` and `product-pulse`.
-One `##` block per product. While this file holds only the unconfigured template below,
-those skills log `<SKILL>_NO_PRODUCTS_CONFIG` and degrade (falling back to
-`memory/watched-repos.md` for repos where possible) — fill it in to activate them.
+One `##` block per product.
 
-> **Status:** unconfigured template. Replace the example block with your own products
-> and delete this line once it's yours.
-
-## Example Product
-- **repos:** `owner/repo` (public), `owner/repo-private` (private), `owner/repo-agent` (automation)
-- **handles:** `@product_handle`, `@founder_handle`   <!-- X accounts to track follower/engagement deltas -->
-- **terms:** `Product Name`, `product tagline`, `unique-search-string`   <!-- bd-radar + mention search -->
-- **surface:** one line — what it is and the primitives it exposes   <!-- capability surface -->
+## Vybose Context Hub
+- **repos:** `Aluma/universal-context-hub` (private), `Aluma/aeon` (automation)
+- **handles:** none configured
+- **terms:** `Vybose Context Hub`, `vybose-context-hub`, `universal-context-hub`, `local-first context hub`, `cross-tool context continuity`
+- **surface:** Local-first context infrastructure that gives LLMs, coding agents, IDEs, note-taking tools, and future assistants accurate prior context with authority-aware retrieval, provenance, conflict handling, and verifiable injection.
 
 <!--
 Fields:

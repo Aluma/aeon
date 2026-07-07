@@ -1,49 +1,36 @@
 # Strategy
 
-Aeon's north-star. Every skill reads this — it's imported into `CLAUDE.md`, so it
-sits in context on **every** run. Skills should align their output to it: what to
-work on, what to prioritise, what to flag, what to skip.
-
-Keep it short (it costs tokens each run): one north-star, 3–5 priorities, the
-constraints. Replace the defaults below with your own.
-
-> **Status:** unconfigured defaults. Until you tailor this file, skills operate
-> with general best judgment and no specific bias. Remove this line once it's yours.
-
 ## North-star metric
 
-The single outcome everything should move toward.
-*e.g. "weekly active users of my app", "MRR", "reach of my research".*
+Vybose Context Hub becomes a production-quality, local-first context infrastructure layer that gives every important LLM, coding, IDE, and note-taking interaction accurate prior context without manual copy/paste transfer.
 
-**Default:** sustainable, compounding progress on the operator's active projects.
+The winning state is cross-tool continuity: a user can move between Claude Desktop, Claude Code, Codex App, Codex CLI, Cursor, VS Code, Antigravity, Gemini CLI, Obsidian, and future tools without re-explaining project state, preferences, decisions, constraints, or corrections.
 
 ## Priorities
 
-The few things that matter most right now, most important first.
-
-1. Correct, verifiable work over work that merely looks finished.
-2. Depth on the operator's core projects over broad, shallow coverage.
-3. Surface signal early — don't sit on something that needs a decision.
-
-*Replace with your own; cap at ~5.*
+1. Build the quality gate before product features. Future autonomous work must be hard to fake: CI, lint, typecheck, tests, integration-style checks, skipped-test detection, placeholder detection, and PR evidence requirements come first.
+2. Optimize for correctness, durability, privacy, and inspectability over demo speed. VCH core operations must be 100% local, resilient to crashes, and transparent enough that the user can see what any agent would see.
+3. Prefer systemic context flow over agent cooperation. Use hooks, watchers, daemons, MCP, REST, transcript extraction, lifecycle injection, and health checks instead of relying on agents to remember instructions.
+4. Enforce context authority and conflict safety. T0 user input, T1 canonical files, T2 high-confidence automated context, and T3 low-confidence automated context must drive ranking, write protection, retrieval, and escalation.
+5. Keep architecture pragmatic and minimal. Add abstractions only when they protect correctness, reduce real duplication, or make future integrations easier without increasing operational fragility.
+6. Route models by strength and cost. GLM 5.2 via OpenRouter is the main autonomous builder; Qwen 3.7 Max, Qwen 3.7 Plus, and DeepSeek V4 Pro handle token-heavy or multimodal work where they are efficient; GPT 5.5 Pro and Claude Opus 4.8 Max are reserved for hard planning, adversarial review, architecture, and final verification.
 
 ## Audience
 
-Who the output is for, and their level.
-*e.g. "technical founders on X", "my internal team", "just me".*
-
-**Default:** the operator — assume technical and time-constrained.
+The primary audience is the operator: technical, time-constrained, quality-sensitive, and intolerant of fake progress. Secondary audiences are future coding agents and maintainers who need unambiguous constraints, executable checks, and clear residual-risk notes.
 
 ## Hard constraints
 
-Lines never to cross.
-
-- Never publish secrets, private data, or unverified claims as fact.
-- Stay within any configured spend and rate limits.
-
-*Add your own — budget caps, tone, topics to avoid, compliance limits.*
+- No direct-to-main feature work. Aeon should produce pull requests with verification evidence; `auto-merge` stays disabled.
+- No reward hacking: do not weaken tests, delete failing checks, hardcode success paths, fake integrations, hide skipped tests, or claim support without executable proof.
+- No cloud dependency in the VCH critical path. Core context storage, retrieval, governance, and injection must run locally.
+- No context pollution. Withhold irrelevant context rather than injecting low-quality or stale material into an agent's reasoning.
+- Canonical or iron-clad files are write-protected unless the user explicitly requests a change.
+- Headless/autonomous work must pause or flag low-confidence, conflicting, privacy-sensitive, or authority-boundary decisions.
+- Every PR must state behavior changed, exact checks run, verification output, known gaps, and why no shortcut/mock/hardcoded path was used.
+- Expensive frontier models are escalation tools, not default throughput models. Use them only when their judgment materially reduces risk or catches subtle failure modes.
 
 ## Optimize for / avoid
 
-- **Optimize for:** signal, correctness, and the priorities above.
-- **Avoid:** filler, hype, busywork, anything off-strategy.
+- **Optimize for:** merge-proof quality gates, executable proof, small reversible PRs, local-first design, provenance, authority-aware retrieval, conflict surfacing, and graceful degradation.
+- **Avoid:** broad rewrites, feature demos before guardrails, hidden complexity, placeholder implementations, non-local critical paths, noisy context capture, and any change whose success depends on trusting an agent's claim instead of a check.
