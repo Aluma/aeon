@@ -28,7 +28,7 @@ The winning state is cross-tool continuity: a user can move between Claude Deskt
 3. Prefer systemic context flow over agent cooperation. Use hooks, watchers, daemons, MCP, REST, transcript extraction, lifecycle injection, and health checks instead of relying on agents to remember instructions.
 4. Enforce context authority and conflict safety. T0 user input, T1 canonical files, T2 high-confidence automated context, and T3 low-confidence automated context must drive ranking, write protection, retrieval, and escalation.
 5. Keep architecture pragmatic and minimal. Add abstractions only when they protect correctness, reduce real duplication, or make future integrations easier without increasing operational fragility.
-6. Route models by strength and cost. GLM 5.2 via OpenRouter is the main autonomous builder; Qwen 3.7 Max, Qwen 3.7 Plus, and DeepSeek V4 Pro handle token-heavy or multimodal work where they are efficient; GPT 5.5 Pro and Claude Opus 4.8 Max are reserved for hard planning, adversarial review, architecture, and final verification.
+6. Route models by strength. Claude Opus 4.8 via OpenRouter is the main orchestrator for planning, risk judgment, and final verification at max effort; GPT 5.5 Pro is the primary coder/implementation model at high effort; Qwen 3.7 Plus handles multimodal work; DeepSeek V4 Pro remains available for lower-cost token-heavy analysis where quality is sufficient.
 
 ## Audience
 
@@ -43,7 +43,7 @@ The primary audience is the operator: technical, time-constrained, quality-sensi
 - Canonical or iron-clad files are write-protected unless the user explicitly requests a change.
 - Headless/autonomous work must pause or flag low-confidence, conflicting, privacy-sensitive, or authority-boundary decisions.
 - Every PR must state behavior changed, exact checks run, verification output, known gaps, and why no shortcut/mock/hardcoded path was used.
-- Expensive frontier models are escalation tools, not default throughput models. Use them only when their judgment materially reduces risk or catches subtle failure modes.
+- Frontier models are the default for orchestration and implementation quality. Use cheaper token-heavy models only when their output can be independently checked by tests, static analysis, or a frontier-model review.
 
 ## Optimize for / avoid
 

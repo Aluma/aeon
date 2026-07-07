@@ -316,6 +316,8 @@ jobs:
           OPENROUTER_MODEL_SONNET: ${{ vars.OPENROUTER_MODEL_SONNET }}
           OPENROUTER_MODEL_HAIKU: ${{ vars.OPENROUTER_MODEL_HAIKU }}
           OPENROUTER_MODEL_MULTIMODAL: ${{ vars.OPENROUTER_MODEL_MULTIMODAL }}
+          OPENROUTER_MODEL_EFFORT: ${{ vars.OPENROUTER_MODEL_EFFORT }}
+          OPENROUTER_MODEL_SONNET_EFFORT: ${{ vars.OPENROUTER_MODEL_SONNET_EFFORT }}
           USEPOD_MODEL: ${{ vars.USEPOD_MODEL }}
           USEPOD_MODEL_SONNET: ${{ vars.USEPOD_MODEL_SONNET }}
           USEPOD_MODEL_HAIKU: ${{ vars.USEPOD_MODEL_HAIKU }}
@@ -558,6 +560,14 @@ jobs:
             USED_GATEWAY=""
             for cand in $CANDIDATES; do
               echo "::notice::Routing attempt via '$cand'"
+              EFFORT_FLAG=()
+              if [ "$cand" = "openrouter" ]; then
+                case "${OPENROUTER_MODEL_EFFORT:-}" in
+                  low|medium|high|xhigh|max) EFFORT_FLAG=(--effort "$OPENROUTER_MODEL_EFFORT") ;;
+                  "") ;;
+                  *) echo "::warning::ignoring invalid OPENROUTER_MODEL_EFFORT='${OPENROUTER_MODEL_EFFORT}' (want low|medium|high|xhigh|max)" ;;
+                esac
+              fi
               # No `set -e` here: the gateway script signals a hard setup failure with
               # an explicit `exit 1` (which exits this subshell → fall over), and on
               # success the subshell's status is Claude's own exit code. A benign
@@ -568,7 +578,7 @@ jobs:
                 MODEL="$BASE_MODEL"
                 source "$GW" >&2
                 source "$LF" >&2   # optional Langfuse tracing (no-op unless LANGFUSE_* set)
-                echo "$PROMPT" | claude -p - --model "$MODEL" --allowedTools "$ALLOWED" "${MCP_FLAGS[@]}" --output-format json 2>&1
+                echo "$PROMPT" | claude -p - --model "$MODEL" "${EFFORT_FLAG[@]}" --allowedTools "$ALLOWED" "${MCP_FLAGS[@]}" --output-format json 2>&1
               ); then
                 USED_GATEWAY="$cand"; CLAUDE_OK=1; break
               fi
@@ -812,6 +822,8 @@ jobs:
           OPENROUTER_MODEL_SONNET: ${{ vars.OPENROUTER_MODEL_SONNET }}
           OPENROUTER_MODEL_HAIKU: ${{ vars.OPENROUTER_MODEL_HAIKU }}
           OPENROUTER_MODEL_MULTIMODAL: ${{ vars.OPENROUTER_MODEL_MULTIMODAL }}
+          OPENROUTER_MODEL_EFFORT: ${{ vars.OPENROUTER_MODEL_EFFORT }}
+          OPENROUTER_MODEL_SONNET_EFFORT: ${{ vars.OPENROUTER_MODEL_SONNET_EFFORT }}
           USEPOD_MODEL: ${{ vars.USEPOD_MODEL }}
           USEPOD_MODEL_SONNET: ${{ vars.USEPOD_MODEL_SONNET }}
           USEPOD_MODEL_HAIKU: ${{ vars.USEPOD_MODEL_HAIKU }}
@@ -971,6 +983,8 @@ jobs:
           OPENROUTER_MODEL_SONNET: ${{ vars.OPENROUTER_MODEL_SONNET }}
           OPENROUTER_MODEL_HAIKU: ${{ vars.OPENROUTER_MODEL_HAIKU }}
           OPENROUTER_MODEL_MULTIMODAL: ${{ vars.OPENROUTER_MODEL_MULTIMODAL }}
+          OPENROUTER_MODEL_EFFORT: ${{ vars.OPENROUTER_MODEL_EFFORT }}
+          OPENROUTER_MODEL_SONNET_EFFORT: ${{ vars.OPENROUTER_MODEL_SONNET_EFFORT }}
           USEPOD_MODEL: ${{ vars.USEPOD_MODEL }}
           USEPOD_MODEL_SONNET: ${{ vars.USEPOD_MODEL_SONNET }}
           USEPOD_MODEL_HAIKU: ${{ vars.USEPOD_MODEL_HAIKU }}
