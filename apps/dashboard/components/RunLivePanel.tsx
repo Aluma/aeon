@@ -30,6 +30,42 @@ function signalClass(type: 'warning' | 'info' | 'success'): string {
   return 'text-primary-55 bg-white/5 border-white/10'
 }
 
+function metadataString(event: AeonRunEvent, key: string): string | null {
+  const value = event.metadata?.[key]
+  if (typeof value === 'string' && value.trim()) return value
+  if (typeof value === 'number' && Number.isFinite(value)) return String(value)
+  return null
+}
+
+function eventDetail(event: AeonRunEvent): string {
+  const details = [event.message, event.gateway, event.model].filter(Boolean) as string[]
+  if (event.kind === 'model_heartbeat') {
+    const elapsed = metadataString(event, 'elapsed')
+    const timeout = metadataString(event, 'timeout')
+    if (elapsed) details.push(`elapsed ${elapsed}s`)
+    if (timeout) details.push(`timeout ${timeout}s`)
+  }
+  if (event.kind === 'token_usage_recorded') {
+    const input = metadataString(event, 'input_tokens')
+    const output = metadataString(event, 'output_tokens')
+    const cacheRead = metadataString(event, 'cache_read')
+    const total = metadataString(event, 'total_tokens')
+    if (input) details.push(`in ${input}`)
+    if (output) details.push(`out ${output}`)
+    if (cacheRead) details.push(`cache ${cacheRead}`)
+    if (total) details.push(`total ${total}`)
+  }
+  if (event.kind === 'result_captured') {
+    const bytes = metadataString(event, 'bytes')
+    if (bytes) details.push(`${bytes} bytes`)
+  }
+  if (event.kind === 'gateway_selected') {
+    const candidates = metadataString(event, 'candidates')
+    if (candidates) details.push(`candidates ${candidates}`)
+  }
+  return details.join(' · ')
+}
+
 export function RunLivePanel({ run, live, events, eventsConfigured, loading, eventError }: RunLivePanelProps) {
   const status = live?.status || run.status
   const activeJob = live?.activeJob?.name || 'n/a'
@@ -100,19 +136,22 @@ export function RunLivePanel({ run, live, events, eventsConfigured, loading, eve
         <div className="text-[10px] uppercase tracking-[0.16em] text-primary-35 font-mono mb-1.5">Timeline</div>
         {events.length ? (
           <div className="space-y-1.5">
-            {events.slice(-40).reverse().map((event, i) => (
-              <div key={`${event.timestamp}-${event.kind}-${i}`} className="border-l border-white/10 pl-2 py-1">
-                <div className="flex items-center gap-2">
-                  <span className="text-[11px] text-eva-orange font-mono">{event.kind}</span>
-                  <span className="text-[10px] text-primary-35 font-mono">{timeAgo(event.timestamp)}</span>
-                </div>
-                {(event.message || event.gateway || event.model) && (
-                  <div className="text-[10px] text-primary-45 font-mono break-words">
-                    {[event.message, event.gateway, event.model].filter(Boolean).join(' · ')}
+            {events.slice(-40).reverse().map((event, i) => {
+              const detail = eventDetail(event)
+              return (
+                <div key={`${event.timestamp}-${event.kind}-${i}`} className="border-l border-white/10 pl-2 py-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] text-eva-orange font-mono">{event.kind}</span>
+                    <span className="text-[10px] text-primary-35 font-mono">{timeAgo(event.timestamp)}</span>
                   </div>
-                )}
-              </div>
-            ))}
+                  {detail && (
+                    <div className="text-[10px] text-primary-45 font-mono break-words">
+                      {detail}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
           </div>
         ) : (
           <div className="text-[11px] text-primary-35 font-mono">No structured events yet.</div>
