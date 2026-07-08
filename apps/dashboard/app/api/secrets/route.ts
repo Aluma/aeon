@@ -32,6 +32,7 @@ const BUILTIN_SECRETS: Omit<Secret, 'isSet'>[] = [
   // disable), LANGFUSE_LOG_CONTENT (0 = metadata only, all = incl. tool bodies).
   { name: 'LANGFUSE_PUBLIC_KEY', group: 'Observability', description: 'Langfuse public key (pk-lf-...) - pairs with LANGFUSE_SECRET_KEY to trace every run to Langfuse. Pick EU or US cloud with the region dropdown below (default EU). Keys in Langfuse → Settings → API Keys.' },
   { name: 'LANGFUSE_SECRET_KEY', group: 'Observability', description: 'Langfuse secret key (sk-lf-...) - the other half of the Langfuse trace-ingestion credential. Both keys must be set for tracing to activate.' },
+  { name: 'AEON_OBSERVABILITY_TOKEN', group: 'Observability', description: 'Bearer token for the optional structured live-event write endpoint. Used only when AEON_OBSERVABILITY_ENDPOINT is set as a repo variable.' },
   // Skill Keys - third-party API keys individual skills call. Each is opt-in:
   // unset means the skills that need it skip rather than fail. Names below are
   // the exact env vars referenced across skills/ (verified by global scan).

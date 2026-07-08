@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
-import { execFileSync } from 'child_process'
-import { ghAvailable, ghArgsRepo } from '@/lib/gh'
+import { ghAvailable, readRepoVariable, setRepoVariable } from '@/lib/gh'
 import { errorResponse } from '@/lib/http'
 
 // Langfuse region → OTLP host. The shim (scripts/langfuse-otel.sh) reads the
@@ -21,25 +20,25 @@ function regionOf(host: string | null): Region | 'custom' {
   return 'custom'
 }
 
-function readVar(name: string): string | null {
-  try {
-    const out = execFileSync(
-      'gh',
-      ['variable', 'list', ...ghArgsRepo(), '--json', 'name,value', '-q', `.[] | select(.name=="${name}") | .value`],
-      { stdio: 'pipe', cwd: process.cwd() },
-    ).toString().trim()
-    return out || null
-  } catch {
-    return null
-  }
-}
-
 export async function GET() {
   if (!ghAvailable()) {
     return NextResponse.json({ error: 'GitHub CLI not authenticated. Run: gh auth login', ghReady: false }, { status: 503 })
   }
-  const host = readVar('LANGFUSE_HOST')
-  return NextResponse.json({ ghReady: true, host, region: regionOf(host) })
+  const host = readRepoVariable('LANGFUSE_HOST')
+  const backend = readRepoVariable('AEON_OBSERVABILITY_BACKEND')
+  const issueNumber = readRepoVariable('AEON_OBSERVABILITY_ISSUE_NUMBER')
+  const eventWriteEndpoint = readRepoVariable('AEON_OBSERVABILITY_ENDPOINT')
+  const eventReadEndpoint = readRepoVariable('AEON_OBSERVABILITY_READ_ENDPOINT')
+  return NextResponse.json({
+    ghReady: true,
+    host,
+    region: regionOf(host),
+    eventWriteConfigured: !!eventWriteEndpoint || (backend === 'github-issue' && !!issueNumber),
+    eventReadConfigured: !!eventReadEndpoint || (backend === 'github-issue' && !!issueNumber),
+    eventBackend: backend || null,
+    eventIssueNumber: issueNumber || null,
+    langfuseLogContent: readRepoVariable('LANGFUSE_LOG_CONTENT'),
+  })
 }
 
 export async function POST(request: Request) {
@@ -53,10 +52,7 @@ export async function POST(request: Request) {
   }
   const host = LANGFUSE_HOSTS[region]
   try {
-    execFileSync('gh', ['variable', 'set', 'LANGFUSE_HOST', ...ghArgsRepo(), '--body', host], {
-      stdio: 'pipe',
-      cwd: process.cwd(),
-    })
+    setRepoVariable('LANGFUSE_HOST', host)
     return NextResponse.json({ ok: true, host, region })
   } catch (error: unknown) {
     return errorResponse(error, 'Failed to set LANGFUSE_HOST')

@@ -87,6 +87,10 @@ metadata-only traces (tokens, cost, latency, structure — no text). All data go
 only to the Langfuse instance you configure; nothing is sent to Anthropic beyond
 the normal model call.
 
+For privacy-first dashboard observability, set `LANGFUSE_LOG_CONTENT=0` and use
+Aeon's structured live events for metadata-only run progress. See
+`docs/observability.md`.
+
 ## Known gaps (and what we deliberately don't do)
 
 Confirmed against a live run (Claude Code `2.1.168`): traces, span tree, latency,

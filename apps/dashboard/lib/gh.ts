@@ -27,10 +27,34 @@ function ghRepo(): string | null {
   return null
 }
 
+export function currentGhRepo(): string | null {
+  return ghRepo()
+}
+
 // `-R owner/repo` args for `gh` subcommands, or empty when the repo is unresolved.
 export function ghArgsRepo(): string[] {
   const repo = ghRepo()
   return repo ? ['-R', repo] : []
+}
+
+export function readRepoVariable(name: string): string | null {
+  try {
+    const out = execFileSync(
+      'gh',
+      ['variable', 'list', ...ghArgsRepo(), '--json', 'name,value', '-q', `.[] | select(.name=="${name}") | .value`],
+      { stdio: 'pipe', cwd: REPO_ROOT },
+    ).toString().trim()
+    return out || null
+  } catch {
+    return null
+  }
+}
+
+export function setRepoVariable(name: string, value: string): void {
+  execFileSync('gh', ['variable', 'set', name, ...ghArgsRepo(), '--body', value], {
+    stdio: 'pipe',
+    cwd: REPO_ROOT,
+  })
 }
 
 // Ensure GitHub Actions in the managed repo may open (and auto-merge) pull

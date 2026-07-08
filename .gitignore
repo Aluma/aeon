@@ -48,3 +48,4 @@ node_modules/
 # Stale artifacts
 .external-work
 .vuln-scan/
+output/.observability/

@@ -334,6 +334,11 @@ jobs:
           LANGFUSE_HOST: ${{ vars.LANGFUSE_HOST }}
           LANGFUSE_TRACING: ${{ vars.LANGFUSE_TRACING }}
           LANGFUSE_LOG_CONTENT: ${{ vars.LANGFUSE_LOG_CONTENT }}
+          AEON_OBSERVABILITY_BACKEND: ${{ vars.AEON_OBSERVABILITY_BACKEND }}
+          AEON_OBSERVABILITY_ISSUE_NUMBER: ${{ vars.AEON_OBSERVABILITY_ISSUE_NUMBER }}
+          AEON_OBSERVABILITY_ENDPOINT: ${{ vars.AEON_OBSERVABILITY_ENDPOINT }}
+          AEON_OBSERVABILITY_TOKEN: ${{ secrets.AEON_OBSERVABILITY_TOKEN }}
+          AEON_OBSERVABILITY_TIMEOUT_SECONDS: ${{ vars.AEON_OBSERVABILITY_TIMEOUT_SECONDS || '3' }}
           GITHUB_TOKEN: ${{ secrets.GH_GLOBAL || secrets.GITHUB_TOKEN }}
           GH_TOKEN: ${{ secrets.GH_GLOBAL || secrets.GITHUB_TOKEN }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
@@ -415,6 +420,10 @@ jobs:
           # Optional Langfuse OTEL tracing — sourced after the gateway in each
           # claude attempt below. Self-gates on LANGFUSE_* and never fails the run.
           LF="${GITHUB_WORKSPACE}/scripts/langfuse-otel.sh"
+          EV="${GITHUB_WORKSPACE}/scripts/aeon-event.sh"
+          # Optional structured live events — self-gates on AEON_OBSERVABILITY_* and
+          # never fails the run. Events are also appended under output/.observability.
+          source "$EV" || true
           if [ "$HARNESS" = "grok" ]; then
             # Set the post-run scorer's routing hint: route its `claude -p` scoring
             # call to xAI (Anthropic-compatible) when an API key is present, else
@@ -430,7 +439,9 @@ jobs:
             fi
             echo "Gateway: $GATEWAY  |  cascade order: $CANDIDATES"
             echo "GATEWAY=${CANDIDATES%% *}" >> "$GITHUB_OUTPUT"   # provisional; overwritten with the winner below
+            aeon_event gateway_selected phase=gateway gateway="$GATEWAY" model="$BASE_MODEL" candidates="$CANDIDATES"
           fi
+          aeon_event run_started phase=setup status=started model="$BASE_MODEL" harness="$HARNESS"
 
           # Generate notify script in workspace (Claude calls: ./notify "message")
           # Messages are saved to .pending-notify/ for reliable post-run delivery
@@ -542,6 +553,7 @@ jobs:
             # Opt-in per-skill run knobs (effort/max_turns/best_of_n/verify) come
             # from SKILL.md frontmatter → GROK_* env for run-grok.sh to map to flags.
             eval "$(bash "${GITHUB_WORKSPACE}/scripts/skill_mode.sh" grok-run-env "$SKILL_NAME")"
+            aeon_event model_call_started phase=model gateway=grok model="$BASE_MODEL" harness=grok
             if CLAUDE_OUTPUT=$(
               export MODEL="$BASE_MODEL" SKILL_MODE
               echo "$PROMPT" | bash "${GITHUB_WORKSPACE}/scripts/run-grok.sh"
@@ -549,6 +561,7 @@ jobs:
               CLAUDE_OK=1
             fi
             if [ "$CLAUDE_OK" != "1" ]; then
+              aeon_event run_failed phase=model gateway=grok model="$BASE_MODEL" status=error message="grok harness failed"
               echo "::error::grok harness failed. Last output: $(printf '%s' "$CLAUDE_OUTPUT" | tail -c 200 | tr '\n' ' ')"
               printf '%s' "$CLAUDE_OUTPUT" | tail -c 500 | tr '\n' ' ' | cut -c1-200 > /tmp/skill-error.txt
               exit 1
@@ -561,6 +574,7 @@ jobs:
             USED_GATEWAY=""
             for cand in $CANDIDATES; do
               echo "::notice::Routing attempt via '$cand'"
+              aeon_event model_call_started phase=model gateway="$cand" model="$BASE_MODEL"
               EFFORT_FLAG=()
               if [ "$cand" = "openrouter" ]; then
                 case "${OPENROUTER_MODEL_EFFORT:-}" in
@@ -589,6 +603,7 @@ jobs:
                     sleep 60
                     elapsed=$((elapsed + 60))
                     echo "::notice::model call still running via '${cand}' after ${elapsed}s (timeout ${MODEL_TIMEOUT_SECONDS}s)" >&2
+                    aeon_event model_heartbeat phase=model gateway="$cand" model="$MODEL" elapsed="$elapsed" timeout="$MODEL_TIMEOUT_SECONDS"
                   done
                 ) &
                 HEARTBEAT_PID=$!
@@ -598,8 +613,10 @@ jobs:
                 USED_GATEWAY="$cand"; CLAUDE_OK=1; break
               fi
               echo "::warning::provider '$cand' failed — $(printf '%s' "$CLAUDE_OUTPUT" | tail -c 160 | tr '\n' ' ')"
+              aeon_event provider_failed phase=model gateway="$cand" model="$BASE_MODEL" status=error
             done
             if [ "$CLAUDE_OK" != "1" ]; then
+              aeon_event run_failed phase=model gateway="$GATEWAY" model="$BASE_MODEL" status=error message="all gateway providers failed"
               echo "::error::All gateway providers failed ($CANDIDATES). Last output: $CLAUDE_OUTPUT"
               # Save error signature for quality tracking (cron-state step reads this)
               echo "$CLAUDE_OUTPUT" | tail -c 500 | tr '\n' ' ' | cut -c1-200 > /tmp/skill-error.txt
@@ -614,6 +631,8 @@ jobs:
           echo "$RESULT_TEXT"
           # Save result for output capture step
           echo "$RESULT_TEXT" > /tmp/skill-result.txt
+          aeon_event model_call_completed phase=model gateway="${USED_GATEWAY:-$HARNESS}" model="$BASE_MODEL" status=success
+          aeon_event result_captured phase=output gateway="${USED_GATEWAY:-$HARNESS}" model="$BASE_MODEL" bytes="$(wc -c < /tmp/skill-result.txt | tr -d ' ')"
 
           # Parse token usage from JSON response
           INPUT_TOKENS=$(echo "$CLAUDE_OUTPUT" | jq '.usage.input_tokens // 0')
@@ -629,6 +648,8 @@ jobs:
           echo "SKILL_TOTAL_TOKENS=$TOTAL_TOKENS" >> "$GITHUB_OUTPUT"
 
           echo "::notice::Token usage — input: $INPUT_TOKENS, output: $OUTPUT_TOKENS, cache_read: $CACHE_READ, cache_creation: $CACHE_CREATION, total: $TOTAL_TOKENS"
+          aeon_event token_usage_recorded phase=usage gateway="${USED_GATEWAY:-$HARNESS}" model="$BASE_MODEL" input_tokens="$INPUT_TOKENS" output_tokens="$OUTPUT_TOKENS" cache_read="$CACHE_READ" cache_creation="$CACHE_CREATION" total_tokens="$TOTAL_TOKENS"
+          aeon_event run_completed phase=run status=success gateway="${USED_GATEWAY:-$HARNESS}" model="$BASE_MODEL"
 
       # ──────────────────────────────────────────────────────────────────────
       # Fleet Watcher postflight (opt-in, always-runs)

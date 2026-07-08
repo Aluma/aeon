@@ -4,6 +4,84 @@ export interface SkillKeyRef { key: string; optional: boolean }
 export interface SkillMcpRef { slug: string; optional: boolean }
 export interface Skill { name: string; description: string; tags: string[]; category: string; pack: string; packName: string; enabled: boolean; schedule: string; var: string; model: string; harness: string; requires: SkillKeyRef[]; mcp: SkillMcpRef[] }
 export interface Run { id: number; workflow: string; status: string; conclusion: string | null; created_at: string; url: string }
+export interface RunStep {
+  name: string
+  status: string
+  conclusion: string | null
+  number?: number
+  startedAt?: string | null
+  completedAt?: string | null
+}
+export interface RunJob {
+  name: string
+  status: string
+  conclusion: string | null
+  url?: string
+  startedAt?: string | null
+  completedAt?: string | null
+  steps?: RunStep[]
+}
+export type AeonRunEventKind =
+  | 'run_started'
+  | 'gateway_selected'
+  | 'model_call_started'
+  | 'model_heartbeat'
+  | 'model_call_completed'
+  | 'provider_failed'
+  | 'result_captured'
+  | 'token_usage_recorded'
+  | 'run_failed'
+  | 'run_completed'
+  | string
+export interface AeonRunEvent {
+  schema: 'aeon.run_event.v1'
+  kind: AeonRunEventKind
+  timestamp: string
+  run_id: string
+  run_attempt?: string
+  repo?: string
+  skill?: string
+  phase?: string
+  gateway?: string
+  model?: string
+  status?: string
+  message?: string
+  metadata?: Record<string, unknown>
+}
+export interface RunHealthSignal {
+  type: 'warning' | 'info' | 'success'
+  code: string
+  message: string
+}
+export interface RunLiveResponse {
+  id: string
+  title: string
+  url?: string
+  status: string
+  conclusion: string | null
+  createdAt?: string | null
+  updatedAt?: string | null
+  jobs: RunJob[]
+  activeJob: RunJob | null
+  activeStep: RunStep | null
+  elapsedSeconds: number | null
+  logsAvailable: boolean
+  stepVisibility: 'available' | 'unavailable'
+  modelTimeoutSeconds: number | null
+}
+export interface RunEventsResponse {
+  configured: boolean
+  events: AeonRunEvent[]
+  error?: string
+}
+export interface ObservabilityConfig {
+  ghReady: boolean
+  host: string | null
+  region: 'eu' | 'us' | 'custom'
+  eventReadConfigured: boolean
+  eventWriteConfigured: boolean
+  langfuseLogContent: string | null
+}
 // Result of a Telegram setup probe (webhook registration / chat-id lookup), shown inline in the Telegram credential helpers.
 export interface TelegramStatus { ok: boolean; msg: string }
 

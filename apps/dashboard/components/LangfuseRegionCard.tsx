@@ -22,6 +22,9 @@ const REGION_LABEL: Record<Region, string> = {
 export function LangfuseRegionCard({ keysSet }: LangfuseRegionCardProps) {
   const [region, setRegion] = useState<Region>('eu')
   const [host, setHost] = useState<string | null>(null)
+  const [eventReadConfigured, setEventReadConfigured] = useState(false)
+  const [eventWriteConfigured, setEventWriteConfigured] = useState(false)
+  const [langfuseLogContent, setLangfuseLogContent] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -31,10 +34,13 @@ export function LangfuseRegionCard({ keysSet }: LangfuseRegionCardProps) {
     let alive = true
     fetch('/api/observability')
       .then(r => r.json())
-      .then((d: { region?: Region; host?: string | null }) => {
+      .then((d: { region?: Region; host?: string | null; eventReadConfigured?: boolean; eventWriteConfigured?: boolean; langfuseLogContent?: string | null }) => {
         if (!alive) return
         if (d.region) setRegion(d.region)
         setHost(d.host ?? null)
+        setEventReadConfigured(!!d.eventReadConfigured)
+        setEventWriteConfigured(!!d.eventWriteConfigured)
+        setLangfuseLogContent(d.langfuseLogContent ?? null)
       })
       .catch(() => { /* leave EU default */ })
       .finally(() => { if (alive) setLoading(false) })
@@ -85,6 +91,17 @@ export function LangfuseRegionCard({ keysSet }: LangfuseRegionCardProps) {
                     : 'Where traces will be sent once the keys above are set. Default is EU cloud.'}
             </div>
             {error && <div className="text-[11px] text-eva-orange font-mono mt-1">{error}</div>}
+            <div className="mt-2 grid grid-cols-3 gap-1.5">
+              <span className={`text-[10px] font-mono px-2 py-1 border ${eventReadConfigured ? 'text-eva-green border-eva-green/30 bg-aeon-green/10' : 'text-primary-35 border-white/10 bg-white/5'}`}>
+                events read {eventReadConfigured ? 'on' : 'off'}
+              </span>
+              <span className={`text-[10px] font-mono px-2 py-1 border ${eventWriteConfigured ? 'text-eva-green border-eva-green/30 bg-aeon-green/10' : 'text-primary-35 border-white/10 bg-white/5'}`}>
+                events write {eventWriteConfigured ? 'on' : 'off'}
+              </span>
+              <span className="text-[10px] font-mono px-2 py-1 border border-white/10 bg-white/5 text-primary-40">
+                content {langfuseLogContent || 'default'}
+              </span>
+            </div>
           </div>
         </div>
         <div className="flex items-center gap-2 shrink-0">

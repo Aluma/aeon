@@ -5,6 +5,8 @@ import type { Run, SkillOutput, AnalyticsData } from '../lib/types'
 import { timeAgo } from '../lib/utils'
 import { SpecNode } from './SpecNode'
 import { PanelError } from './PanelError'
+import { RunLivePanel } from './RunLivePanel'
+import type { AeonRunEvent, RunEventsResponse, RunLiveResponse } from '../lib/types'
 
 interface RightPanelProps {
   runs: Run[]
@@ -19,11 +21,16 @@ interface RightPanelProps {
 }
 
 export function RightPanel({ runs, outputs, feedLoading, feedError, analyticsData, analyticsError, onViewRun, onRefresh, onFetchAnalytics }: RightPanelProps) {
-  const [rightTab, setRightTab] = useState<'feed' | 'runs' | 'analytics'>('feed')
+  const [rightTab, setRightTab] = useState<'feed' | 'live' | 'runs' | 'analytics'>('feed')
   const [selectedRun, setSelectedRun] = useState<Run | null>(null)
   const [runLogs, setRunLogs] = useState('')
   const [runSummary, setRunSummary] = useState('')
+  const [runLive, setRunLive] = useState<RunLiveResponse | null>(null)
+  const [runEvents, setRunEvents] = useState<AeonRunEvent[]>([])
+  const [eventsConfigured, setEventsConfigured] = useState(false)
+  const [eventError, setEventError] = useState('')
   const [logsLoading, setLogsLoading] = useState(false)
+  const [liveLoading, setLiveLoading] = useState(false)
   const [showFullLogs, setShowFullLogs] = useState(false)
   const [collapsed, setCollapsed] = useState(false)
 
@@ -43,10 +50,37 @@ export function RightPanel({ runs, outputs, feedLoading, feedError, analyticsDat
     try { const r = await fetch(`/api/runs/${run.id}/logs`); if (r.ok) { const d = await r.json(); setRunSummary(d.summary || ''); setRunLogs(d.logs || '') } } catch { setRunLogs('Failed') } finally { setLogsLoading(false) }
   }
 
+  const fetchRunLive = async (run: Run, showLoading = true) => {
+    setSelectedRun(run); setRightTab('live'); setEventError('')
+    if (showLoading) setLiveLoading(true)
+    try {
+      const [liveRes, eventsRes] = await Promise.all([
+        fetch(`/api/runs/${run.id}/live`),
+        fetch(`/api/runs/${run.id}/events`),
+      ])
+      if (liveRes.ok) setRunLive(await liveRes.json() as RunLiveResponse)
+      const eventsData = await eventsRes.json().catch(() => ({})) as RunEventsResponse
+      setEventsConfigured(!!eventsData.configured)
+      setRunEvents(eventsData.events || [])
+      setEventError(eventsData.error || (!eventsRes.ok ? 'Failed to fetch live events' : ''))
+    } catch {
+      setEventError('Failed to fetch live state')
+    } finally {
+      if (showLoading) setLiveLoading(false)
+    }
+  }
+
   const handleViewRun = (run: Run) => {
-    viewRunLogs(run)
+    if (run.status === 'in_progress' || run.status === 'queued') fetchRunLive(run)
+    else viewRunLogs(run)
     onViewRun(run)
   }
+
+  useEffect(() => {
+    if (!selectedRun || rightTab !== 'live' || selectedRun.status === 'completed') return
+    const id = setInterval(() => { fetchRunLive(selectedRun, false) }, 5000)
+    return () => clearInterval(id)
+  }, [rightTab, selectedRun])
 
   // Collapsed: a thin rail with an expand control and a vertical label.
   if (collapsed) {
@@ -64,7 +98,7 @@ export function RightPanel({ runs, outputs, feedLoading, feedError, analyticsDat
           aria-label="Expand panel"
           className="flex-1 w-full flex items-start justify-center pt-4 group"
         >
-          <span className="text-[10px] font-mono uppercase tracking-[0.28em] text-primary-35 group-hover:text-primary-70 transition-colors [writing-mode:vertical-rl]">Feed · Runs · Analytics</span>
+            <span className="text-[10px] font-mono uppercase tracking-[0.28em] text-primary-35 group-hover:text-primary-70 transition-colors [writing-mode:vertical-rl]">Feed · Live · Runs · Analytics</span>
         </button>
       </div>
     )
@@ -73,7 +107,7 @@ export function RightPanel({ runs, outputs, feedLoading, feedError, analyticsDat
   return (
     <div className="w-[288px] border-l border-[rgba(250,250,250,0.10)] flex flex-col shrink-0 bg-aeon-panel">
       <div className="h-12 border-b border-[rgba(250,250,250,0.10)] flex items-center px-3 gap-1 shrink-0">
-        {(['feed', 'runs', 'analytics'] as const).map(tab => (
+        {(['feed', 'live', 'runs', 'analytics'] as const).map(tab => (
           <button key={tab} onClick={() => { setRightTab(tab); if (tab === 'analytics') onFetchAnalytics() }}
             className={`text-[11px] px-2.5 py-1.5 transition-colors font-mono uppercase tracking-[1px] ${rightTab === tab ? 'bg-aeon-fg text-aeon-bg' : 'text-primary-40 hover:text-primary-70'}`}>{tab}</button>
         ))}
@@ -121,6 +155,36 @@ export function RightPanel({ runs, outputs, feedLoading, feedError, analyticsDat
         )}
 
         {/* Runs */}
+        {rightTab === 'live' && (
+          selectedRun ? (
+            <div className="flex flex-col h-full">
+              <div className="flex items-center gap-2 px-3 py-2.5 border-b border-[rgba(250,250,250,0.10)]">
+                <button onClick={() => { setSelectedRun(null); setRunLive(null); setRunEvents([]) }} className="text-primary-40 hover:text-primary-100 text-xs">&larr;</button>
+                <span className="font-mono text-xs text-primary-70 truncate flex-1">{selectedRun.workflow}</span>
+                <button onClick={() => viewRunLogs(selectedRun)} className="text-[11px] text-primary-40 font-mono border border-[rgba(250,250,250,0.10)] px-2 py-0.5 hover:border-eva-orange hover:text-eva-orange transition-colors">Logs</button>
+                <a href={selectedRun.url} target="_blank" rel="noopener noreferrer" className="text-[11px] text-primary-40 font-mono border border-[rgba(250,250,250,0.10)] px-2 py-0.5 hover:border-eva-orange hover:text-eva-orange transition-colors">GitHub</a>
+              </div>
+              <div className="flex-1 overflow-y-auto p-3">
+                <RunLivePanel run={selectedRun} live={runLive} events={runEvents} eventsConfigured={eventsConfigured} loading={liveLoading} eventError={eventError} />
+              </div>
+            </div>
+          ) : (
+            <div>
+              {!runs.length ? <div className="px-4 py-12 text-center text-xs text-primary-35 font-mono">No runs</div> :
+                runs.map(run => (
+                  <button key={run.id} onClick={() => fetchRunLive(run)}
+                    className="w-full flex items-center gap-2.5 px-3 py-2.5 border-b border-[rgba(250,250,250,0.04)] hover:bg-aeon-bg transition-colors text-left">
+                    <span className={`text-xs ${run.conclusion === 'success' ? 'text-eva-green' : run.conclusion === 'failure' ? 'text-eva-red' : run.status === 'in_progress' ? 'text-eva-orange' : 'text-primary-35'}`}>
+                      {run.conclusion === 'success' ? '\u2713' : run.conclusion === 'failure' ? '\u2717' : run.status === 'in_progress' ? '\u25cc' : '\u00b7'}
+                    </span>
+                    <span className="text-xs text-primary-70 truncate flex-1 font-mono">{run.workflow}</span>
+                    <span className="text-[11px] text-primary-35 font-mono tabular-nums">{timeAgo(run.created_at)}</span>
+                  </button>
+                ))}
+            </div>
+          )
+        )}
+
         {rightTab === 'runs' && (
           selectedRun ? (
             <div className="flex flex-col h-full">
@@ -149,7 +213,7 @@ export function RightPanel({ runs, outputs, feedLoading, feedError, analyticsDat
             <div>
               {!runs.length ? <div className="px-4 py-12 text-center text-xs text-primary-35 font-mono">No runs</div> :
                 runs.map(run => (
-                  <button key={run.id} onClick={() => viewRunLogs(run)}
+                  <button key={run.id} onClick={() => handleViewRun(run)}
                     className="w-full flex items-center gap-2.5 px-3 py-2.5 border-b border-[rgba(250,250,250,0.04)] hover:bg-aeon-bg transition-colors text-left">
                     <span className={`text-xs ${run.conclusion === 'success' ? 'text-eva-green' : run.conclusion === 'failure' ? 'text-eva-red' : run.status === 'in_progress' ? 'text-eva-orange' : 'text-primary-35'}`}>
                       {run.conclusion === 'success' ? '\u2713' : run.conclusion === 'failure' ? '\u2717' : run.status === 'in_progress' ? '\u25cc' : '\u00b7'}
