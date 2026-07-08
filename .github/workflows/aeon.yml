@@ -318,6 +318,7 @@ jobs:
           OPENROUTER_MODEL_MULTIMODAL: ${{ vars.OPENROUTER_MODEL_MULTIMODAL }}
           OPENROUTER_MODEL_EFFORT: ${{ vars.OPENROUTER_MODEL_EFFORT }}
           OPENROUTER_MODEL_SONNET_EFFORT: ${{ vars.OPENROUTER_MODEL_SONNET_EFFORT }}
+          AEON_MODEL_TIMEOUT_SECONDS: ${{ vars.AEON_MODEL_TIMEOUT_SECONDS || '1500' }}
           USEPOD_MODEL: ${{ vars.USEPOD_MODEL }}
           USEPOD_MODEL_SONNET: ${{ vars.USEPOD_MODEL_SONNET }}
           USEPOD_MODEL_HAIKU: ${{ vars.USEPOD_MODEL_HAIKU }}
@@ -568,6 +569,10 @@ jobs:
                   *) echo "::warning::ignoring invalid OPENROUTER_MODEL_EFFORT='${OPENROUTER_MODEL_EFFORT}' (want low|medium|high|xhigh|max)" ;;
                 esac
               fi
+              MODEL_TIMEOUT_SECONDS="${AEON_MODEL_TIMEOUT_SECONDS:-1500}"
+              case "$MODEL_TIMEOUT_SECONDS" in
+                ''|*[!0-9]*) echo "::warning::invalid AEON_MODEL_TIMEOUT_SECONDS='${MODEL_TIMEOUT_SECONDS}', using 1500"; MODEL_TIMEOUT_SECONDS=1500 ;;
+              esac
               # No `set -e` here: the gateway script signals a hard setup failure with
               # an explicit `exit 1` (which exits this subshell → fall over), and on
               # success the subshell's status is Claude's own exit code. A benign
@@ -578,7 +583,17 @@ jobs:
                 MODEL="$BASE_MODEL"
                 source "$GW" >&2
                 source "$LF" >&2   # optional Langfuse tracing (no-op unless LANGFUSE_* set)
-                echo "$PROMPT" | claude -p - --model "$MODEL" "${EFFORT_FLAG[@]}" --allowedTools "$ALLOWED" "${MCP_FLAGS[@]}" --output-format json 2>&1
+                (
+                  elapsed=0
+                  while true; do
+                    sleep 60
+                    elapsed=$((elapsed + 60))
+                    echo "::notice::model call still running via '${cand}' after ${elapsed}s (timeout ${MODEL_TIMEOUT_SECONDS}s)" >&2
+                  done
+                ) &
+                HEARTBEAT_PID=$!
+                trap 'kill "$HEARTBEAT_PID" >/dev/null 2>&1 || true' EXIT
+                echo "$PROMPT" | timeout "${MODEL_TIMEOUT_SECONDS}s" claude -p - --model "$MODEL" "${EFFORT_FLAG[@]}" --allowedTools "$ALLOWED" "${MCP_FLAGS[@]}" --output-format json 2>&1
               ); then
                 USED_GATEWAY="$cand"; CLAUDE_OK=1; break
               fi
