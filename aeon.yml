@@ -11,7 +11,7 @@ skills:
 
 
   # --- Mid-morning (9 AM UTC) ---
-  pr-triage: { enabled: false, schedule: "30 9 * * *", var: "" } # first-touch external-PR triage (verdict + label + welcoming comment); var: owner/repo or owner/repo#N for one-shot
+  pr-triage: { enabled: true, schedule: "30 9 * * *", var: "Aluma/universal-context-hub" } # first-touch external-PR triage (verdict + label + welcoming comment); var: owner/repo or owner/repo#N for one-shot
   pr-review: { enabled: true, schedule: "0 13 * * *", var: "Aluma/universal-context-hub" } # var: empty/owner/repo=per-PR review (posts comments) | --survey [dry-run] [owner/repo]=risk-tiered PR triage digest (folds in pr-merge)
   auto-merge: { enabled: false, schedule: "0 14 * * *" } # merge green PRs daily at 2 PM UTC; max 3 per run
   github-monitor: { enabled: true, schedule: "0 9 * * *", var: "Aluma/universal-context-hub" } # watch your repos. var: empty=combined monitor (PRs/issues/releases) | issues | releases | prs | owner/repo (folds in github-issues/github-releases/pr-tracker)
@@ -44,7 +44,7 @@ skills:
 
   # --- Late afternoon (4 PM UTC) ---
   changelog: { enabled: true, schedule: "0 16 * * 5", var: "Aluma/universal-context-hub" } # changelog from recent commits/PRs. var: empty/owner/repo=in-repo | push-to:owner/website-repo=cross-repo changelog PR (needs GH_GLOBAL)
-  vuln-scanner: { enabled: false, schedule: "0 16 * * 6", var: "" } # security scan + disclose. var: empty/owner/repo=scan | resubmit[:owner/repo]=PVR re-submit | disclose=queue armed emails (folds in pvr-watchlist/disclosure-emailer). RESEND_* for email.
+  vuln-scanner: { enabled: true, schedule: "0 16 * * 6", var: "Aluma/universal-context-hub" } # security scan + disclose. var: empty/owner/repo=scan | resubmit[:owner/repo]=PVR re-submit | disclose=queue armed emails (folds in pvr-watchlist/disclosure-emailer). RESEND_* for email.
   deploy-prototype: { enabled: false, schedule: "workflow_dispatch", var: "" } # on-demand — build app and deploy to Vercel
   base-mcp: { enabled: false, schedule: "workflow_dispatch", var: "" } # on-demand — Base Account access via the Base MCP server (mcp.base.org)
   autoresearch: { enabled: false, schedule: "workflow_dispatch", var: "" } # on-demand — set var to skill name to evolve
@@ -62,13 +62,13 @@ skills:
   # --- Content distribution (runs 30 min after article-generating skills) ---
 
   # --- Evening / meta (6 PM UTC) ---
-  strategy-builder: { enabled: false, schedule: "workflow_dispatch", var: "" } # on-demand — draft STRATEGY.md (north-star / priorities / audience / constraints) from a brief + repo README + memory. var: bare goal text, or structured brief "repo=owner/repo | links=url1,url2 | goal=free text". Powers the dashboard Strategy → Build my strategy button. No API key needed.
+  strategy-builder: { enabled: true, schedule: "workflow_dispatch", var: "repo=Aluma/universal-context-hub | goal=Build VCH as a production-quality, local-first context infrastructure layer with strong quality gates, no shortcuts, no reward hacking, and executable proof for every autonomous PR." } # on-demand — draft STRATEGY.md (north-star / priorities / audience / constraints) from a brief + repo README + memory. var: bare goal text, or structured brief "repo=owner/repo | links=url1,url2 | goal=free text". Powers the dashboard Strategy → Build my strategy button. No API key needed.
   skill-health: { enabled: true, schedule: "0 18 * * *", var: "analytics:168" } # self-healing health audit + analytics. var: empty=health (files/resolves issues) | <skill>=single | analytics[:hours]=fleet run/pass-rate metrics (folds in skill-analytics)
 
-  self-improve: { enabled: false, schedule: "0 18 1/2 * *", var: "" } # every other day — improve the agent, or audit it. var: empty/improve[:focus]=propose+apply one fix | audit[:focus]=review what ran/failed (folds in self-review)
+  self-improve: { enabled: true, schedule: "0 19 * * 0", var: "audit:vch-quality" } # weekly — improve the agent, or audit it. var: empty/improve[:focus]=propose+apply one fix | audit[:focus]=review what ran/failed (folds in self-review)
 
   action-converter: { enabled: false, schedule: "0 18 * * *" }
-  skill-repair: { enabled: false, schedule: "reactive", var: "" } # reactive — auto-fix failing skills
+  skill-repair: { enabled: true, schedule: "reactive", var: "" } # reactive — auto-fix failing skills
 
   # --- Cost tracking (Monday 7 AM UTC, weekly) ---
 
@@ -83,7 +83,7 @@ skills:
   schedule-ads: { enabled: false, schedule: "0 8 * * *", var: "" } # daily 08:00 UTC — paid ads via AdManage.ai. var: empty=schedule ad launches across Meta/TikTok/Snapchat/Pinterest/LinkedIn from config.yaml (PAUSED by default) | create=provision Meta campaigns/ad sets on-demand from config.create.yaml (PAUSED, IDs written back to state so the schedule branch can launch into them; folds in create-campaign)
 
   # --- Utilities ---
-  auto-workflow: { enabled: false, schedule: "workflow_dispatch", var: "" } # on-demand aeon.yml builder. var: <url[,url]>=analyze→enablement plan | enable:<slugs>=flip enabled:true (validate, commit, PR); enable:dry-run:<slugs> (folds in skill-enabler)
+  auto-workflow: { enabled: true, schedule: "workflow_dispatch", var: "" } # on-demand aeon.yml builder. var: <url[,url]>=analyze→enablement plan | enable:<slugs>=flip enabled:true (validate, commit, PR); enable:dry-run:<slugs> (folds in skill-enabler)
 
   # --- Ported from derivative instances (PR #219) ---
   # Markets & crypto
@@ -93,7 +93,7 @@ skills:
   narrative-convergence: { enabled: false, schedule: "0 13 * * *", var: "" } # daily 13:00 UTC — cross-skill convergence detector: entities/themes surfaced by 3+ independent skill categories in 48h = high-confidence write opportunities. Category map in memory/topics/signal-categories.md. Pass var to filter.
 
   # Security
-  vuln-tracker: { enabled: false, schedule: "30 16 * * *", var: "" } # daily lifecycle poll: vuln-scanner PR/advisory status + PVR triage + disclosure-queue aging (folds in pvr-triage/disclosure-tracker). var: empty=full | pvr | queue | prs | <GHSA-id>
+  vuln-tracker: { enabled: true, schedule: "30 16 * * *", var: "" } # daily lifecycle poll: vuln-scanner PR/advisory status + PVR triage + disclosure-queue aging (folds in pvr-triage/disclosure-tracker). var: empty=full | pvr | queue | prs | <GHSA-id>
 
   # Ideas & productivity
   idea-pipeline: { enabled: false, schedule: "0 18 * * 1" } # Monday — execution-gap audit: top 3 backlog ideas to build this week
@@ -112,7 +112,7 @@ skills:
 
   # --- Ported from derivative instances (2026-06-29) ---
   # Security (pairs with vuln-scanner ↑ channel 5d)
-  inbox-triage: { enabled: false, schedule: "30 11 * * *" } # daily 11:30 — GitHub notification-inbox triage (maintainer replies to disclosures/advisories/mentions)
+  inbox-triage: { enabled: true, schedule: "30 11 * * *" } # daily 11:30 — GitHub notification-inbox triage (maintainer replies to disclosures/advisories/mentions)
 
   # Dev & repo
   feature: { enabled: true, schedule: "0 10 * * 1,3,5", var: "external:Aluma/universal-context-hub --fix-issues" } # build a feature + open PR. var: watched (default) | external:<owner/repo> | dormant[:<owner/repo>], append --fix-issues (folds in external-feature/repo-revive). GH_GLOBAL for external.
@@ -124,7 +124,7 @@ skills:
   # Product / ops (config: memory/products.md)
 
   # Self-maintenance / meta
-  memory-flush: { enabled: false, schedule: "30 23 * * *" } # daily — promote important recent log entries into MEMORY.md
+  memory-flush: { enabled: true, schedule: "30 23 * * *", var: "vch-quality" } # daily — promote important recent log entries into MEMORY.md
 
   # Utilities / on-demand
 
@@ -146,9 +146,9 @@ skills:
 # Multiple triggers: trigger: [{ on: a, when: "..." }, { on: b, when: "..." }]
 # Any matching trigger fires the skill (OR logic).
 reactive:
-  # skill-repair:
-  #   trigger:
-  #     - { on: "*", when: "consecutive_failures >= 3" }
+  skill-repair:
+    trigger:
+      - { on: "*", when: "consecutive_failures >= 2" }
   # autoresearch:
   #   trigger:
   #     - { on: skill-health, when: "last_status = success" }

@@ -10,6 +10,7 @@
     "success_rate": 1
   },
   "feature": {
+    "last_dispatch": "2026-07-08T22:02:07Z",
     "last_status": "success",
     "last_success": "2026-07-08T08:24:38Z",
     "total_runs": 2,
@@ -17,5 +18,104 @@
     "total_failures": 0,
     "consecutive_failures": 0,
     "success_rate": 1
+  },
+  "pr-triage": {
+    "last_dispatch": "2026-07-08T22:02:07Z",
+    "last_status": "configured",
+    "total_runs": 0,
+    "total_successes": 0,
+    "total_failures": 0,
+    "consecutive_failures": 0,
+    "success_rate": 0
+  },
+  "pr-review": {
+    "last_dispatch": "2026-07-08T22:02:07Z",
+    "last_status": "configured",
+    "total_runs": 0,
+    "total_successes": 0,
+    "total_failures": 0,
+    "consecutive_failures": 0,
+    "success_rate": 0
+  },
+  "github-monitor": {
+    "last_dispatch": "2026-07-08T22:02:07Z",
+    "last_status": "configured",
+    "total_runs": 0,
+    "total_successes": 0,
+    "total_failures": 0,
+    "consecutive_failures": 0,
+    "success_rate": 0
+  },
+  "changelog": {
+    "last_dispatch": "2026-07-08T22:02:07Z",
+    "last_status": "configured",
+    "total_runs": 0,
+    "total_successes": 0,
+    "total_failures": 0,
+    "consecutive_failures": 0,
+    "success_rate": 0
+  },
+  "vuln-scanner": {
+    "last_dispatch": "2026-07-08T22:02:07Z",
+    "last_status": "configured",
+    "total_runs": 0,
+    "total_successes": 0,
+    "total_failures": 0,
+    "consecutive_failures": 0,
+    "success_rate": 0
+  },
+  "skill-health": {
+    "last_dispatch": "2026-07-08T22:02:07Z",
+    "last_status": "configured",
+    "total_runs": 0,
+    "total_successes": 0,
+    "total_failures": 0,
+    "consecutive_failures": 0,
+    "success_rate": 0
+  },
+  "self-improve": {
+    "last_dispatch": "2026-07-08T22:02:07Z",
+    "last_status": "configured",
+    "total_runs": 0,
+    "total_successes": 0,
+    "total_failures": 0,
+    "consecutive_failures": 0,
+    "success_rate": 0
+  },
+  "operator-scorecard": {
+    "last_dispatch": "2026-07-08T22:02:07Z",
+    "last_status": "configured",
+    "total_runs": 0,
+    "total_successes": 0,
+    "total_failures": 0,
+    "consecutive_failures": 0,
+    "success_rate": 0
+  },
+  "vuln-tracker": {
+    "last_dispatch": "2026-07-08T22:02:07Z",
+    "last_status": "configured",
+    "total_runs": 0,
+    "total_successes": 0,
+    "total_failures": 0,
+    "consecutive_failures": 0,
+    "success_rate": 0
+  },
+  "inbox-triage": {
+    "last_dispatch": "2026-07-08T22:02:07Z",
+    "last_status": "configured",
+    "total_runs": 0,
+    "total_successes": 0,
+    "total_failures": 0,
+    "consecutive_failures": 0,
+    "success_rate": 0
+  },
+  "memory-flush": {
+    "last_dispatch": "2026-07-08T22:02:07Z",
+    "last_status": "configured",
+    "total_runs": 0,
+    "total_successes": 0,
+    "total_failures": 0,
+    "consecutive_failures": 0,
+    "success_rate": 0
   }
 }
