@@ -313,11 +313,16 @@ jobs:
           SURPLUS_API_KEY: ${{ secrets.SURPLUS_API_KEY }}
           # Optional gateway model overrides + sidecar debug (defaults live in scripts/llm-gateway.sh)
           OPENROUTER_MODEL: ${{ vars.OPENROUTER_MODEL }}
+          OPENROUTER_MODEL_OPUS_MAX: ${{ vars.OPENROUTER_MODEL_OPUS_MAX }}
           OPENROUTER_MODEL_SONNET: ${{ vars.OPENROUTER_MODEL_SONNET }}
+          OPENROUTER_MODEL_GPT_PRO: ${{ vars.OPENROUTER_MODEL_GPT_PRO }}
           OPENROUTER_MODEL_HAIKU: ${{ vars.OPENROUTER_MODEL_HAIKU }}
           OPENROUTER_MODEL_MULTIMODAL: ${{ vars.OPENROUTER_MODEL_MULTIMODAL }}
           OPENROUTER_MODEL_EFFORT: ${{ vars.OPENROUTER_MODEL_EFFORT }}
+          OPENROUTER_MODEL_OPUS_EFFORT: ${{ vars.OPENROUTER_MODEL_OPUS_EFFORT }}
+          OPENROUTER_MODEL_GPT_EFFORT: ${{ vars.OPENROUTER_MODEL_GPT_EFFORT }}
           OPENROUTER_MODEL_SONNET_EFFORT: ${{ vars.OPENROUTER_MODEL_SONNET_EFFORT }}
+          OPENROUTER_MODEL_HAIKU_EFFORT: ${{ vars.OPENROUTER_MODEL_HAIKU_EFFORT }}
           AEON_MODEL_TIMEOUT_SECONDS: ${{ vars.AEON_MODEL_TIMEOUT_SECONDS || '1500' }}
           USEPOD_MODEL: ${{ vars.USEPOD_MODEL }}
           USEPOD_MODEL_SONNET: ${{ vars.USEPOD_MODEL_SONNET }}
@@ -577,10 +582,16 @@ jobs:
               aeon_event model_call_started phase=model gateway="$cand" model="$BASE_MODEL"
               EFFORT_FLAG=()
               if [ "$cand" = "openrouter" ]; then
-                case "${OPENROUTER_MODEL_EFFORT:-}" in
-                  low|medium|high|xhigh|max) EFFORT_FLAG=(--effort "$OPENROUTER_MODEL_EFFORT") ;;
+                OPENROUTER_EFFORT="${OPENROUTER_MODEL_EFFORT:-}"
+                case "$BASE_MODEL" in
+                  claude-opus-*) OPENROUTER_EFFORT="${OPENROUTER_MODEL_OPUS_EFFORT:-${OPENROUTER_EFFORT:-max}}" ;;
+                  claude-sonnet-*|claude-fable-*) OPENROUTER_EFFORT="${OPENROUTER_MODEL_GPT_EFFORT:-${OPENROUTER_MODEL_SONNET_EFFORT:-${OPENROUTER_EFFORT:-high}}}" ;;
+                  claude-haiku-*) OPENROUTER_EFFORT="${OPENROUTER_MODEL_HAIKU_EFFORT:-${OPENROUTER_EFFORT:-medium}}" ;;
+                esac
+                case "$OPENROUTER_EFFORT" in
+                  low|medium|high|xhigh|max) EFFORT_FLAG=(--effort "$OPENROUTER_EFFORT") ;;
                   "") ;;
-                  *) echo "::warning::ignoring invalid OPENROUTER_MODEL_EFFORT='${OPENROUTER_MODEL_EFFORT}' (want low|medium|high|xhigh|max)" ;;
+                  *) echo "::warning::ignoring invalid OpenRouter effort='${OPENROUTER_EFFORT}' (want low|medium|high|xhigh|max)" ;;
                 esac
               fi
               MODEL_TIMEOUT_SECONDS="${AEON_MODEL_TIMEOUT_SECONDS:-1500}"
@@ -855,11 +866,16 @@ jobs:
           XAI_API_KEY: ${{ secrets.XAI_API_KEY }}   # grok scorer: API-key auth path
           GROK_CREDENTIALS: ${{ secrets.GROK_CREDENTIALS }}   # grok scorer: X-account OAuth (restored by run-grok.sh)
           OPENROUTER_MODEL: ${{ vars.OPENROUTER_MODEL }}
+          OPENROUTER_MODEL_OPUS_MAX: ${{ vars.OPENROUTER_MODEL_OPUS_MAX }}
           OPENROUTER_MODEL_SONNET: ${{ vars.OPENROUTER_MODEL_SONNET }}
+          OPENROUTER_MODEL_GPT_PRO: ${{ vars.OPENROUTER_MODEL_GPT_PRO }}
           OPENROUTER_MODEL_HAIKU: ${{ vars.OPENROUTER_MODEL_HAIKU }}
           OPENROUTER_MODEL_MULTIMODAL: ${{ vars.OPENROUTER_MODEL_MULTIMODAL }}
           OPENROUTER_MODEL_EFFORT: ${{ vars.OPENROUTER_MODEL_EFFORT }}
+          OPENROUTER_MODEL_OPUS_EFFORT: ${{ vars.OPENROUTER_MODEL_OPUS_EFFORT }}
+          OPENROUTER_MODEL_GPT_EFFORT: ${{ vars.OPENROUTER_MODEL_GPT_EFFORT }}
           OPENROUTER_MODEL_SONNET_EFFORT: ${{ vars.OPENROUTER_MODEL_SONNET_EFFORT }}
+          OPENROUTER_MODEL_HAIKU_EFFORT: ${{ vars.OPENROUTER_MODEL_HAIKU_EFFORT }}
           USEPOD_MODEL: ${{ vars.USEPOD_MODEL }}
           USEPOD_MODEL_SONNET: ${{ vars.USEPOD_MODEL_SONNET }}
           USEPOD_MODEL_HAIKU: ${{ vars.USEPOD_MODEL_HAIKU }}
@@ -1016,11 +1032,16 @@ jobs:
           VENICE_API_KEY: ${{ secrets.VENICE_API_KEY }}
           SURPLUS_API_KEY: ${{ secrets.SURPLUS_API_KEY }}
           OPENROUTER_MODEL: ${{ vars.OPENROUTER_MODEL }}
+          OPENROUTER_MODEL_OPUS_MAX: ${{ vars.OPENROUTER_MODEL_OPUS_MAX }}
           OPENROUTER_MODEL_SONNET: ${{ vars.OPENROUTER_MODEL_SONNET }}
+          OPENROUTER_MODEL_GPT_PRO: ${{ vars.OPENROUTER_MODEL_GPT_PRO }}
           OPENROUTER_MODEL_HAIKU: ${{ vars.OPENROUTER_MODEL_HAIKU }}
           OPENROUTER_MODEL_MULTIMODAL: ${{ vars.OPENROUTER_MODEL_MULTIMODAL }}
           OPENROUTER_MODEL_EFFORT: ${{ vars.OPENROUTER_MODEL_EFFORT }}
+          OPENROUTER_MODEL_OPUS_EFFORT: ${{ vars.OPENROUTER_MODEL_OPUS_EFFORT }}
+          OPENROUTER_MODEL_GPT_EFFORT: ${{ vars.OPENROUTER_MODEL_GPT_EFFORT }}
           OPENROUTER_MODEL_SONNET_EFFORT: ${{ vars.OPENROUTER_MODEL_SONNET_EFFORT }}
+          OPENROUTER_MODEL_HAIKU_EFFORT: ${{ vars.OPENROUTER_MODEL_HAIKU_EFFORT }}
           USEPOD_MODEL: ${{ vars.USEPOD_MODEL }}
           USEPOD_MODEL_SONNET: ${{ vars.USEPOD_MODEL_SONNET }}
           USEPOD_MODEL_HAIKU: ${{ vars.USEPOD_MODEL_HAIKU }}

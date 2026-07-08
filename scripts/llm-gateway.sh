@@ -183,16 +183,30 @@ case "${GATEWAY:-direct}" in
     echo "::notice::Routing through Bankr Gateway (https://llm.bankr.bot)"
     ;;
 
-  openrouter)  # NATIVE — Anthropic "skin", carries Opus 4.8
+  openrouter)  # NATIVE — Anthropic "skin", carries Opus/GPT/Qwen/DeepSeek routing
     require_secret OPENROUTER_API_KEY
     export ANTHROPIC_BASE_URL="https://openrouter.ai/api"   # NOT /api/v1
     export ANTHROPIC_AUTH_TOKEN="$OPENROUTER_API_KEY"       # Bearer; API_KEY must be blank
     unset ANTHROPIC_API_KEY CLAUDE_CODE_OAUTH_TOKEN
-    # Map EVERY model slot Claude Code uses to OpenRouter slugs (opus/sonnet/haiku).
-    export ANTHROPIC_DEFAULT_OPUS_MODEL="${OPENROUTER_MODEL:-anthropic/claude-opus-4.8}"
-    export ANTHROPIC_DEFAULT_SONNET_MODEL="${OPENROUTER_MODEL_SONNET:-anthropic/claude-sonnet-4.6}"
-    export ANTHROPIC_DEFAULT_HAIKU_MODEL="${OPENROUTER_MODEL_HAIKU:-anthropic/claude-haiku-4.5}"
-    MODEL="$ANTHROPIC_DEFAULT_OPUS_MODEL"
+    # Map every model slot Claude Code uses to the operator's OpenRouter roster.
+    # The Claude-facing model ids in aeon.yml are role handles; this block resolves
+    # them to provider slugs so "Sonnet" can mean the configured coder model.
+    openrouter_opus="${OPENROUTER_MODEL_OPUS_MAX:-${OPENROUTER_MODEL:-anthropic/claude-opus-4.8}}"
+    openrouter_coder="${OPENROUTER_MODEL_GPT_PRO:-${OPENROUTER_MODEL_SONNET:-openai/gpt-5.5-pro}}"
+    openrouter_haiku="${OPENROUTER_MODEL_HAIKU:-deepseek/deepseek-v4-pro}"
+    openrouter_multimodal="${OPENROUTER_MODEL_MULTIMODAL:-qwen/qwen3.7-plus}"
+    export ANTHROPIC_DEFAULT_OPUS_MODEL="$openrouter_opus"
+    export ANTHROPIC_DEFAULT_SONNET_MODEL="$openrouter_coder"
+    export ANTHROPIC_DEFAULT_HAIKU_MODEL="$openrouter_haiku"
+    requested_model="${MODEL:-}"
+    case "$requested_model" in
+      ""|claude-opus-*|opus|max|orchestrator) MODEL="$openrouter_opus" ;;
+      claude-sonnet-*|claude-fable-*|gpt|coder) MODEL="$openrouter_coder" ;;
+      claude-haiku-*|haiku|deepseek|cheap|analysis) MODEL="$openrouter_haiku" ;;
+      qwen|multimodal|vision) MODEL="$openrouter_multimodal" ;;
+      */*) MODEL="$requested_model" ;; # explicit OpenRouter slug
+      *) MODEL="$openrouter_opus" ;;
+    esac
     echo "::notice::Routing through OpenRouter (Anthropic-native) as ${MODEL}"
     ;;
 

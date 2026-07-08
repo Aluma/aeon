@@ -30,3 +30,9 @@ type: Index
 - Keep VCH feature PRs small, verified, and reviewable.
 - Monitor VCH PRs, issues, security lifecycle, and Aeon run health daily.
 - Repair failing Aeon skills reactively after repeated failures instead of letting silent degradation accumulate.
+
+## Known Config Gaps
+- Langfuse trace-level observability is not active until `LANGFUSE_PUBLIC_KEY` and `LANGFUSE_SECRET_KEY` are installed. GitHub-issue live events are active, but they are not full prompt/tool traces.
+- Model routing now maps Opus/GPT/DeepSeek/Qwen role handles through OpenRouter, but Aeon still runs one primary model per skill. True intra-run orchestrator-to-coder delegation needs a future workflow/skill architecture change.
+- VCH PR #5 is open and CI-green for issue #3. Do not launch another `feature --fix-issues` build until that PR is reviewed/merged or a new `ai-build` issue is ready.
+- `auto-merge` remains intentionally disabled for VCH. Branch protection requires CI and conversation resolution, but not approving reviews.
