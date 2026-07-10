@@ -6,3 +6,4 @@ date,skill,model,input_tokens,output_tokens,cache_read,cache_creation
 2026-07-10,auto-merge,gpt-terra,291178,2606,0,0
 2026-07-10,pr-review,claude-opus-4-8,22,3410,682057,72824
 2026-07-10,auto-merge,gpt-terra,342262,2306,0,0
+2026-07-10,vch-program,claude-opus-4-8,142,37870,7521128,142329

@@ -9,7 +9,8 @@ type: Index
 - Autonomous agent running on GitHub Actions via Claude Code.
 - Primary automation repo: Aluma/aeon.
 - Frozen repo: Aluma/universal-context-hub. Do not build, review, merge, triage, monitor, or otherwise operate on this repo unless the operator explicitly unfreezes it.
-- Active VCH build target: unset. Before any VCH build work, identify the active repo and read its current README/specs/issues/PR state.
+- Active VCH build target: **Aluma/vybose-context-hub** (verified 2026-07-10; the only authorized target per STRATEGY). Default branch `main`, protected, `verify` check green.
+- VCH program state (2026-07-10): Sprint 5. Issue #2 [S5.0] current-state audit is in `vch:plan-review` (PR #3, `hold`, awaiting independent vch-plan-review). Audit finding: 0/28 S5.1-S5.3 criteria backed by required public-path test files; recommended build order S5.1 -> S5.2 -> S5.3 after the audit PR merges.
 
 ## Recent Articles
 | Date | Title | Topic |
