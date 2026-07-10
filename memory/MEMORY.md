@@ -33,6 +33,6 @@ type: Index
 
 ## Known Config Gaps
 - Langfuse trace-level observability is not active until `LANGFUSE_PUBLIC_KEY` and `LANGFUSE_SECRET_KEY` are installed. GitHub-issue live events are active, but they are not full prompt/tool traces.
-- Model routing now maps Opus/GPT/DeepSeek/Qwen role handles through OpenRouter, but Aeon still runs one primary model per skill. True intra-run orchestrator-to-coder delegation needs a future workflow/skill architecture change.
+- Model routing now maps Opus/GPT 5.6 Sol/Terra/Luna/DeepSeek/Qwen role handles through OpenRouter. Aeon still runs one primary model per skill, so cross-checking is implemented as a skill pipeline: GPT 5.6 Sol writes/repairs, Opus reviews high-risk PRs, GPT 5.6 Terra audits/merges, and GPT 5.6 Luna handles routine monitoring/triage. True intra-run orchestrator-to-coder delegation needs a future workflow/skill architecture change.
 - VCH PR #5 is open and CI-green for issue #3. Do not launch another `feature --fix-issues` build until that PR is reviewed/merged or a new `ai-build` issue is ready.
-- `auto-merge` remains intentionally disabled for VCH. Branch protection requires CI and conversation resolution, but not approving reviews.
+- `auto-merge` is intentionally enabled for VCH full-autonomy testing. Branch protection still requires CI and conversation resolution, but not approving reviews; deterministic gates plus cross-model review are the intended control surface.

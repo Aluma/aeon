@@ -2,7 +2,7 @@
 #
 # Enable skills by setting enabled: true. Multiple skills at the same time run in parallel.
 # Set var: "value" to pass a default parameter to the skill.
-# Set model: "claude-sonnet-4-6" per skill to override the default model (cost optimization).
+# Set model: "gpt-sol" per skill to override the default model for a role.
 # Set harness: "grok" per skill to run it through the Grok Build CLI instead of the
 # default Claude Code harness (see the top-level `harness:` key below).
 
@@ -11,10 +11,10 @@ skills:
 
 
   # --- Mid-morning (9 AM UTC) ---
-  pr-triage: { enabled: true, schedule: "30 9 * * *", var: "Aluma/universal-context-hub" } # first-touch external-PR triage (verdict + label + welcoming comment); var: owner/repo or owner/repo#N for one-shot
-  pr-review: { enabled: true, schedule: "0 13 * * *", var: "Aluma/universal-context-hub" } # var: empty/owner/repo=per-PR review (posts comments) | --survey [dry-run] [owner/repo]=risk-tiered PR triage digest (folds in pr-merge)
-  auto-merge: { enabled: false, schedule: "0 14 * * *" } # merge green PRs daily at 2 PM UTC; max 3 per run
-  github-monitor: { enabled: true, schedule: "0 9 * * *", var: "Aluma/universal-context-hub" } # watch your repos. var: empty=combined monitor (PRs/issues/releases) | issues | releases | prs | owner/repo (folds in github-issues/github-releases/pr-tracker)
+  pr-triage: { enabled: true, schedule: "30 9 * * *", var: "Aluma/universal-context-hub", model: "gpt-luna" } # first-touch external-PR triage (verdict + label + welcoming comment); var: owner/repo or owner/repo#N for one-shot
+  pr-review: { enabled: true, schedule: "0 13 * * *", var: "Aluma/universal-context-hub", model: "claude-opus-4-8" } # independent reviewer: Opus checks GPT-built PRs. var: empty/owner/repo=per-PR review (posts comments) | --survey [dry-run] [owner/repo]=risk-tiered PR triage digest (folds in pr-merge)
+  auto-merge: { enabled: true, schedule: "0 14 * * *", var: "Aluma/universal-context-hub", model: "gpt-terra" } # merge green PRs daily at 2 PM UTC; max 3 per run
+  github-monitor: { enabled: true, schedule: "0 9 * * *", var: "Aluma/universal-context-hub", model: "gpt-luna" } # watch your repos. var: empty=combined monitor (PRs/issues/releases) | issues | releases | prs | owner/repo (folds in github-issues/github-releases/pr-tracker)
   github-trending: { enabled: false, schedule: "0 9 * * *", var: "" } # trending repos + Hugging Face Hub. var: empty=GitHub | <lang> | hf | hf:{models,datasets,spaces}
 
   # --- Midday (12 PM UTC) ---
@@ -44,7 +44,7 @@ skills:
 
   # --- Late afternoon (4 PM UTC) ---
   changelog: { enabled: true, schedule: "0 16 * * 5", var: "Aluma/universal-context-hub" } # changelog from recent commits/PRs. var: empty/owner/repo=in-repo | push-to:owner/website-repo=cross-repo changelog PR (needs GH_GLOBAL)
-  vuln-scanner: { enabled: true, schedule: "0 16 * * 6", var: "Aluma/universal-context-hub" } # security scan + disclose. var: empty/owner/repo=scan | resubmit[:owner/repo]=PVR re-submit | disclose=queue armed emails (folds in pvr-watchlist/disclosure-emailer). RESEND_* for email.
+  vuln-scanner: { enabled: true, schedule: "0 16 * * 6", var: "Aluma/universal-context-hub", model: "claude-opus-4-8" } # security scan + disclose. var: empty/owner/repo=scan | resubmit[:owner/repo]=PVR re-submit | disclose=queue armed emails (folds in pvr-watchlist/disclosure-emailer). RESEND_* for email.
   deploy-prototype: { enabled: false, schedule: "workflow_dispatch", var: "" } # on-demand — build app and deploy to Vercel
   base-mcp: { enabled: false, schedule: "workflow_dispatch", var: "" } # on-demand — Base Account access via the Base MCP server (mcp.base.org)
   autoresearch: { enabled: false, schedule: "workflow_dispatch", var: "" } # on-demand — set var to skill name to evolve
@@ -63,12 +63,12 @@ skills:
 
   # --- Evening / meta (6 PM UTC) ---
   strategy-builder: { enabled: true, schedule: "workflow_dispatch", var: "repo=Aluma/universal-context-hub | goal=Build VCH as a production-quality, local-first context infrastructure layer with strong quality gates, no shortcuts, no reward hacking, and executable proof for every autonomous PR." } # on-demand — draft STRATEGY.md (north-star / priorities / audience / constraints) from a brief + repo README + memory. var: bare goal text, or structured brief "repo=owner/repo | links=url1,url2 | goal=free text". Powers the dashboard Strategy → Build my strategy button. No API key needed.
-  skill-health: { enabled: true, schedule: "0 18 * * *", var: "analytics:168" } # self-healing health audit + analytics. var: empty=health (files/resolves issues) | <skill>=single | analytics[:hours]=fleet run/pass-rate metrics (folds in skill-analytics)
+  skill-health: { enabled: true, schedule: "0 18 * * *", var: "analytics:168", model: "gpt-luna" } # self-healing health audit + analytics. var: empty=health (files/resolves issues) | <skill>=single | analytics[:hours]=fleet run/pass-rate metrics (folds in skill-analytics)
 
-  self-improve: { enabled: true, schedule: "0 19 * * 0", var: "audit:vch-quality" } # weekly — improve the agent, or audit it. var: empty/improve[:focus]=propose+apply one fix | audit[:focus]=review what ran/failed (folds in self-review)
+  self-improve: { enabled: true, schedule: "0 19 * * 0", var: "audit:vch-quality", model: "gpt-terra" } # weekly — improve the agent, or audit it. var: empty/improve[:focus]=propose+apply one fix | audit[:focus]=review what ran/failed (folds in self-review)
 
   action-converter: { enabled: false, schedule: "0 18 * * *" }
-  skill-repair: { enabled: true, schedule: "reactive", var: "", model: "claude-sonnet-5" } # reactive — auto-fix failing skills
+  skill-repair: { enabled: true, schedule: "reactive", var: "", model: "gpt-sol" } # reactive — auto-fix failing skills
 
   # --- Cost tracking (Monday 7 AM UTC, weekly) ---
 
@@ -93,7 +93,7 @@ skills:
   narrative-convergence: { enabled: false, schedule: "0 13 * * *", var: "" } # daily 13:00 UTC — cross-skill convergence detector: entities/themes surfaced by 3+ independent skill categories in 48h = high-confidence write opportunities. Category map in memory/topics/signal-categories.md. Pass var to filter.
 
   # Security
-  vuln-tracker: { enabled: true, schedule: "30 16 * * *", var: "" } # daily lifecycle poll: vuln-scanner PR/advisory status + PVR triage + disclosure-queue aging (folds in pvr-triage/disclosure-tracker). var: empty=full | pvr | queue | prs | <GHSA-id>
+  vuln-tracker: { enabled: true, schedule: "30 16 * * *", var: "", model: "gpt-terra" } # daily lifecycle poll: vuln-scanner PR/advisory status + PVR triage + disclosure-queue aging (folds in pvr-triage/disclosure-tracker). var: empty=full | pvr | queue | prs | <GHSA-id>
 
   # Ideas & productivity
   idea-pipeline: { enabled: false, schedule: "0 18 * * 1" } # Monday — execution-gap audit: top 3 backlog ideas to build this week
@@ -112,10 +112,10 @@ skills:
 
   # --- Ported from derivative instances (2026-06-29) ---
   # Security (pairs with vuln-scanner ↑ channel 5d)
-  inbox-triage: { enabled: true, schedule: "30 11 * * *" } # daily 11:30 — GitHub notification-inbox triage (maintainer replies to disclosures/advisories/mentions)
+  inbox-triage: { enabled: true, schedule: "30 11 * * *", model: "gpt-luna" } # daily 11:30 — GitHub notification-inbox triage (maintainer replies to disclosures/advisories/mentions)
 
   # Dev & repo
-  feature: { enabled: true, schedule: "0 10 * * 1,3,5", var: "external:Aluma/universal-context-hub --fix-issues", model: "claude-sonnet-5" } # build a feature + open PR. var: watched (default) | external:<owner/repo> | dormant[:<owner/repo>], append --fix-issues (folds in external-feature/repo-revive). GH_GLOBAL for external.
+  feature: { enabled: true, schedule: "0 10 * * 1,3,5", var: "external:Aluma/universal-context-hub --fix-issues", model: "gpt-sol" } # build a feature + open PR. var: watched (default) | external:<owner/repo> | dormant[:<owner/repo>], append --fix-issues (folds in external-feature/repo-revive). GH_GLOBAL for external.
 
   # Research & content
   write-tweet: { enabled: false, schedule: "0 21 * * *", var: "" } # tweet studio. var: empty=drafts (10×5 tiers) | thread [topic] | remix [window]. Optional XAI_API_KEY (required for remix).
@@ -124,14 +124,14 @@ skills:
   # Product / ops (config: memory/products.md)
 
   # Self-maintenance / meta
-  memory-flush: { enabled: true, schedule: "30 23 * * *", var: "vch-quality" } # daily — promote important recent log entries into MEMORY.md
+  memory-flush: { enabled: true, schedule: "30 23 * * *", var: "vch-quality", model: "gpt-luna" } # daily — promote important recent log entries into MEMORY.md
 
   # Utilities / on-demand
 
   send-email: { enabled: false, schedule: "workflow_dispatch", var: "" } # on-demand — compose + send a 1:1 email to a named recipient via Resend (general sibling of disclosure-emailer). var: "to=… | subject=… | about=…"
   idea-forge: { enabled: false, schedule: "0 9 * * 1", var: "" } # weekly business-idea engine. var: empty/generate=timing-scored wedges | validate[:theme]=viability screen | memo[:theme]=2 evidence-backed memos
   # --- Fallback (must be last) ---
-  heartbeat: { enabled: true, schedule: "0 8 * * *", var: "vch-quality" } # ambient fleet-health check (default) — surfaces anything worth attention. var: empty=ambient check | <area>=ambient focused on that area | brief[:<area>]=priority brief (3 things to focus on, why now, what moved; folds in priority-brief)
+  heartbeat: { enabled: true, schedule: "0 8 * * *", var: "vch-quality", model: "gpt-luna" } # ambient fleet-health check (default) — surfaces anything worth attention. var: empty=ambient check | <area>=ambient focused on that area | brief[:<area>]=priority brief (3 things to focus on, why now, what moved; folds in priority-brief)
 
 # Reactive triggers — event-driven skill dispatch based on cron-state.json conditions.
 # Skills with schedule: "reactive" are never cron-matched. Instead, the scheduler
@@ -174,7 +174,12 @@ chains:
   #     - skill: routine, consume: [token-movers, hn-digest, issue-triage, github-trending]
 
 # Default model for all skills. Override per-run via workflow_dispatch.
-# Options: claude-opus-4-8, claude-fable-5, claude-sonnet-5, claude-sonnet-4-6, claude-haiku-4-5-20251001
+# Options include provider-neutral role handles:
+#   gpt-sol   -> OpenRouter GPT-5.6 Sol for high-stakes dev/repair work
+#   gpt-terra -> OpenRouter GPT-5.6 Terra for balanced review/audit/merge ops
+#   gpt-luna  -> OpenRouter GPT-5.6 Luna for routine monitoring/triage
+# plus Claude handles: claude-opus-4-8, claude-fable-5, claude-sonnet-5,
+# claude-sonnet-4-6, claude-haiku-4-5-20251001
 # (Grok harness models: grok-composer-2.5-fast — fast single-agent default;
 #  grok-build — reasoning/multi-agent coding model, run with --no-subagents in CI.
 #  Use the bare CLI id `grok-build`, not the API id `grok-build-0.1`.)

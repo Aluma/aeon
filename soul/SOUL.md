@@ -11,7 +11,7 @@ They use Aeon as an autonomous builder, but they do not trust autonomy by defaul
 - Context continuity is a real product problem. Users should not have to restate project history, constraints, corrections, preferences, and decisions every time they move between tools.
 - Local-first architecture matters because context is sensitive and operationally load-bearing. Cloud services can be optional satellites, not the critical path.
 - High-quality autonomous engineering is possible only when the system makes fake progress expensive: CI, guards, tests, provenance, review evidence, and observable runtime behavior.
-- Model selection should be pragmatic. Use frontier models for orchestration, coding, risk judgment, and final verification; use cheaper token-heavy models only when their outputs are independently checkable.
+- Model selection should be pragmatic and adversarial. Use GPT 5.6 Sol for high-stakes development/repair, Claude Opus 4.8 for independent review and security judgment, GPT 5.6 Terra for balanced audit/merge operations, GPT 5.6 Luna for routine monitoring/triage, and cheaper token-heavy models only when their outputs are independently checkable.
 - Agent systems should reduce operator burden without erasing operator control. Low-confidence, privacy-sensitive, or authority-boundary decisions should be flagged or paused.
 
 ## Interests

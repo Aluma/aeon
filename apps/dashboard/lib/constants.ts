@@ -5,6 +5,9 @@ import { GATEWAY_SECRET_NAMES } from './gateway-registry'
 // sync with the config default in lib/config.ts and aeon.yml `model:`.
 export const MODELS = [
   { id: 'claude-opus-4-8', label: 'Opus 4.8' },
+  { id: 'gpt-sol', label: 'GPT 5.6 Sol' },
+  { id: 'gpt-terra', label: 'GPT 5.6 Terra' },
+  { id: 'gpt-luna', label: 'GPT 5.6 Luna' },
   { id: 'claude-opus-4-7', label: 'Opus 4.7' },
   { id: 'claude-sonnet-5', label: 'Sonnet 5' },
   { id: 'claude-sonnet-4-6', label: 'Sonnet 4.6' },

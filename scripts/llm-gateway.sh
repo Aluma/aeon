@@ -192,7 +192,10 @@ case "${GATEWAY:-direct}" in
     # The Claude-facing model ids in aeon.yml are role handles; this block resolves
     # them to provider slugs so "Sonnet" can mean the configured coder model.
     openrouter_opus="${OPENROUTER_MODEL_OPUS_MAX:-${OPENROUTER_MODEL:-anthropic/claude-opus-4.8}}"
-    openrouter_coder="${OPENROUTER_MODEL_GPT_PRO:-${OPENROUTER_MODEL_SONNET:-openai/gpt-5.5-pro}}"
+    openrouter_sol="${OPENROUTER_MODEL_GPT_SOL:-${OPENROUTER_MODEL_GPT_PRO:-openai/gpt-5.6-sol}}"
+    openrouter_terra="${OPENROUTER_MODEL_GPT_TERRA:-openai/gpt-5.6-terra}"
+    openrouter_luna="${OPENROUTER_MODEL_GPT_LUNA:-openai/gpt-5.6-luna}"
+    openrouter_coder="${OPENROUTER_MODEL_GPT_PRO:-${OPENROUTER_MODEL_SONNET:-$openrouter_sol}}"
     openrouter_haiku="${OPENROUTER_MODEL_HAIKU:-deepseek/deepseek-v4-pro}"
     openrouter_multimodal="${OPENROUTER_MODEL_MULTIMODAL:-qwen/qwen3.7-plus}"
     export ANTHROPIC_DEFAULT_OPUS_MODEL="$openrouter_opus"
@@ -201,7 +204,9 @@ case "${GATEWAY:-direct}" in
     requested_model="${MODEL:-}"
     case "$requested_model" in
       ""|claude-opus-*|opus|max|orchestrator) MODEL="$openrouter_opus" ;;
-      claude-sonnet-*|claude-fable-*|gpt|coder) MODEL="$openrouter_coder" ;;
+      claude-sonnet-*|gpt|coder|dev|gpt-sol|sol) MODEL="$openrouter_coder" ;;
+      claude-fable-*|gpt-terra|terra|review|test|audit|merge) MODEL="$openrouter_terra" ;;
+      gpt-luna|luna|triage|monitor|routine) MODEL="$openrouter_luna" ;;
       claude-haiku-*|haiku|deepseek|cheap|analysis) MODEL="$openrouter_haiku" ;;
       qwen|multimodal|vision) MODEL="$openrouter_multimodal" ;;
       */*) MODEL="$requested_model" ;; # explicit OpenRouter slug
