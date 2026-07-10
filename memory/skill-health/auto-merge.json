@@ -1,0 +1,14 @@
+{
+  "skill": "auto-merge",
+  "last_analyzed": "2026-07-10T20:50:35Z",
+  "quality_score": 4,
+  "assessment": "Correctly evaluated the single open PR, applied the BLOCKED gate properly, persisted retry state, and suppressed notification as required.",
+  "flags": [],
+  "avg_score": 4,
+  "history": [
+    {
+      "date": "2026-07-10",
+      "score": 4
+    }
+  ]
+}
