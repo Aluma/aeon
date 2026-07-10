@@ -25,8 +25,9 @@ VCH becomes the local-first context layer that lets the operator move between Cl
 2. Correctness, durability, privacy, and inspectability over demo speed. VCH core operations must be 100% local, crash-resilient, and transparent enough that the operator can inspect what any agent would see.
 3. Systemic context flow over agent cooperation. Use hooks, watchers, daemons, MCP, REST, transcript extraction, lifecycle injection, and health checks instead of relying on agents to remember instructions.
 4. Enforce context authority and conflict safety. T0 user input, T1 canonical files, T2 high-confidence automated context, and T3 low-confidence automated context must drive ranking, write protection, retrieval, and escalation.
-5. Keep architecture pragmatic and minimal. Add abstractions only when they protect correctness, reduce real duplication, or make future integrations easier without increasing operational fragility.
-6. Route models by strength and use cross-model checking. Claude Opus 4.8 via OpenRouter remains the independent reviewer/verifier for high-risk PR review, security judgment, and final quality calls. GPT 5.6 Sol handles high-stakes development and repair work, GPT 5.6 Terra handles balanced audit/merge operations, GPT 5.6 Luna handles routine monitoring and triage, Qwen 3.7 Plus handles multimodal work, and DeepSeek V4 Pro remains available for lower-cost token-heavy analysis where quality is independently checkable.
+5. Verify the active repo and specs before acting. Do not infer the VCH build target from stale memory, older PRs, old repo names, or historical logs.
+6. Keep architecture pragmatic and minimal. Add abstractions only when they protect correctness, reduce real duplication, or make future integrations easier without increasing operational fragility.
+7. Route models by strength and use cross-model checking. Claude Opus 4.8 via OpenRouter remains the independent reviewer/verifier for high-risk PR review, security judgment, and final quality calls. GPT 5.6 Sol handles high-stakes development and repair work, GPT 5.6 Terra handles balanced audit/merge operations, GPT 5.6 Luna handles routine monitoring and triage, Qwen 3.7 Plus handles multimodal work, and DeepSeek V4 Pro remains available for lower-cost token-heavy analysis where quality is independently checkable.
 
 ## Audience
 
@@ -35,6 +36,8 @@ The primary audience is the operator: technical, time-constrained, quality-sensi
 ## Hard constraints
 
 - No direct-to-main feature work. Aeon produces pull requests with verification evidence; autonomous merge is allowed only through Aeon's `auto-merge` safety policy after branch protection reports a clean merge state.
+- Do not operate on frozen repos. `Aluma/universal-context-hub` is frozen unless the operator explicitly unfreezes it.
+- No autonomous VCH work may start until Aeon has identified the active non-frozen repo and read its current README/specs/issues/PR state.
 - No reward hacking: do not weaken tests, delete failing checks, hardcode success paths, fake integrations, hide skipped tests, or claim support without executable proof.
 - No cloud dependency in the VCH critical path. Core context storage, retrieval, governance, and injection must run locally.
 - No context pollution. Withhold irrelevant context rather than injecting low-quality or stale material into an agent's reasoning.

@@ -8,7 +8,8 @@ Config for the product-aware skills: `bd-radar` and `product-pulse`.
 One `##` block per product.
 
 ## Vybose Context Hub
-- **repos:** `Aluma/universal-context-hub` (private), `Aluma/aeon` (automation)
+- **repos:** `Aluma/aeon` (automation)
+- **frozen_repos:** `Aluma/universal-context-hub` (private; do not build, review, merge, triage, monitor, or otherwise operate on this repo)
 - **handles:** none configured
 - **terms:** `Vybose Context Hub`, `vybose-context-hub`, `universal-context-hub`, `local-first context hub`, `cross-tool context continuity`
 - **surface:** Local-first context infrastructure that gives LLMs, coding agents, IDEs, note-taking tools, and future assistants accurate prior context with authority-aware retrieval, provenance, conflict handling, and verifiable injection.

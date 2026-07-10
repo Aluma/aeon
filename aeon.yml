@@ -11,10 +11,10 @@ skills:
 
 
   # --- Mid-morning (9 AM UTC) ---
-  pr-triage: { enabled: true, schedule: "30 9 * * *", var: "Aluma/universal-context-hub", model: "gpt-luna" } # first-touch external-PR triage (verdict + label + welcoming comment); var: owner/repo or owner/repo#N for one-shot
-  pr-review: { enabled: true, schedule: "0 13 * * *", var: "Aluma/universal-context-hub", model: "claude-opus-4-8" } # independent reviewer: Opus checks GPT-built PRs. var: empty/owner/repo=per-PR review (posts comments) | --survey [dry-run] [owner/repo]=risk-tiered PR triage digest (folds in pr-merge)
-  auto-merge: { enabled: true, schedule: "0 14 * * *", var: "Aluma/universal-context-hub", model: "gpt-terra" } # merge green PRs daily at 2 PM UTC; max 3 per run
-  github-monitor: { enabled: true, schedule: "0 9 * * *", var: "Aluma/universal-context-hub", model: "gpt-luna" } # watch your repos. var: empty=combined monitor (PRs/issues/releases) | issues | releases | prs | owner/repo (folds in github-issues/github-releases/pr-tracker)
+  pr-triage: { enabled: false, schedule: "30 9 * * *", var: "", model: "gpt-luna" } # disabled until an active non-frozen build repo is configured
+  pr-review: { enabled: false, schedule: "0 13 * * *", var: "", model: "claude-opus-4-8" } # independent reviewer: Opus checks GPT-built PRs once an active repo is configured
+  auto-merge: { enabled: false, schedule: "0 14 * * *", var: "", model: "gpt-terra" } # full-autonomy merge gate; disabled until an active non-frozen build repo is configured
+  github-monitor: { enabled: true, schedule: "0 9 * * *", var: "Aluma/aeon", model: "gpt-luna" } # watch automation repo only until an active build repo is configured
   github-trending: { enabled: false, schedule: "0 9 * * *", var: "" } # trending repos + Hugging Face Hub. var: empty=GitHub | <lang> | hf | hf:{models,datasets,spaces}
 
   # --- Midday (12 PM UTC) ---
@@ -43,8 +43,8 @@ skills:
   # --- Repo intelligence (3 PM UTC) ---
 
   # --- Late afternoon (4 PM UTC) ---
-  changelog: { enabled: true, schedule: "0 16 * * 5", var: "Aluma/universal-context-hub" } # changelog from recent commits/PRs. var: empty/owner/repo=in-repo | push-to:owner/website-repo=cross-repo changelog PR (needs GH_GLOBAL)
-  vuln-scanner: { enabled: true, schedule: "0 16 * * 6", var: "Aluma/universal-context-hub", model: "claude-opus-4-8" } # security scan + disclose. var: empty/owner/repo=scan | resubmit[:owner/repo]=PVR re-submit | disclose=queue armed emails (folds in pvr-watchlist/disclosure-emailer). RESEND_* for email.
+  changelog: { enabled: true, schedule: "0 16 * * 5", var: "Aluma/aeon" } # changelog from recent commits/PRs. var: empty/owner/repo=in-repo | push-to:owner/website-repo=cross-repo changelog PR (needs GH_GLOBAL)
+  vuln-scanner: { enabled: false, schedule: "0 16 * * 6", var: "", model: "claude-opus-4-8" } # disabled until an active non-frozen build repo is configured
   deploy-prototype: { enabled: false, schedule: "workflow_dispatch", var: "" } # on-demand — build app and deploy to Vercel
   base-mcp: { enabled: false, schedule: "workflow_dispatch", var: "" } # on-demand — Base Account access via the Base MCP server (mcp.base.org)
   autoresearch: { enabled: false, schedule: "workflow_dispatch", var: "" } # on-demand — set var to skill name to evolve
@@ -62,7 +62,7 @@ skills:
   # --- Content distribution (runs 30 min after article-generating skills) ---
 
   # --- Evening / meta (6 PM UTC) ---
-  strategy-builder: { enabled: true, schedule: "workflow_dispatch", var: "repo=Aluma/universal-context-hub | goal=Build VCH as a production-quality, local-first context infrastructure layer with strong quality gates, no shortcuts, no reward hacking, and executable proof for every autonomous PR." } # on-demand — draft STRATEGY.md (north-star / priorities / audience / constraints) from a brief + repo README + memory. var: bare goal text, or structured brief "repo=owner/repo | links=url1,url2 | goal=free text". Powers the dashboard Strategy → Build my strategy button. No API key needed.
+  strategy-builder: { enabled: true, schedule: "workflow_dispatch", var: "goal=Build VCH as a production-quality, local-first context infrastructure layer with strong quality gates, no shortcuts, no reward hacking, and executable proof for every autonomous PR. Do not target frozen repos." } # on-demand — draft STRATEGY.md (north-star / priorities / audience / constraints) from a brief + repo README + memory. var: bare goal text, or structured brief "repo=owner/repo | links=url1,url2 | goal=free text". Powers the dashboard Strategy → Build my strategy button. No API key needed.
   skill-health: { enabled: true, schedule: "0 18 * * *", var: "analytics:168", model: "gpt-luna" } # self-healing health audit + analytics. var: empty=health (files/resolves issues) | <skill>=single | analytics[:hours]=fleet run/pass-rate metrics (folds in skill-analytics)
 
   self-improve: { enabled: true, schedule: "0 19 * * 0", var: "audit:vch-quality", model: "gpt-terra" } # weekly — improve the agent, or audit it. var: empty/improve[:focus]=propose+apply one fix | audit[:focus]=review what ran/failed (folds in self-review)
@@ -77,7 +77,7 @@ skills:
   spawn-instance: { enabled: false, schedule: "workflow_dispatch", var: "" } # on-demand — var: "name: purpose"
   fleet-control: { enabled: false, schedule: "0 9,15 * * *", var: "" } # managed child instances. var: empty=health check | status | dispatch <inst|*> <skill> [var=…] | scorecard (fleet-wide runs/tokens/cost/reliability; folds in fleet-scorecard)
   shiplog: { enabled: false, schedule: "0 9 * * 1" } # everything shipped SINCE THE LAST RUN (memory/state/shiplog-last.json) — cross-repo PRs/commits, security fixes merged into others' repos, star deltas, X/ecosystem traction → digest article + ready-to-post shiplog in the operator's voice. Cadence-agnostic: this schedule just sets frequency (daily/weekly/on-demand). Config: memory/products.md + memory/watched-repos.md. Optional XAI_API_KEY (X traction) + GH_GLOBAL (cross-repo reach). var: since:DATE | days:N | dry-run | owner/repo | <theme>.
-  operator-scorecard: { enabled: true, schedule: "30 10 * * 1", var: "push Aluma/universal-context-hub" } # Monday — weekly plain-language scorecard: agent health + community growth + economic activity (worst-of-three OK/WATCH/DEGRADED verdict). var: empty=scorecard (7d) | dry-run=no notify | N=window N hours | ops[ DATE]=end-of-day ops recap (shipped/failed/follow-up) | push[ owner/repo]=diff-deep-dive push recap (folds in ops-recap + push-recap)
+  operator-scorecard: { enabled: true, schedule: "30 10 * * 1", var: "push Aluma/aeon" } # Monday — weekly plain-language scorecard: agent health + community growth + economic activity (worst-of-three OK/WATCH/DEGRADED verdict). var: empty=scorecard (7d) | dry-run=no notify | N=window N hours | ops[ DATE]=end-of-day ops recap (shipped/failed/follow-up) | push[ owner/repo]=diff-deep-dive push recap (folds in ops-recap + push-recap)
 
   # --- Paid ads (AdManage.ai) ---
   schedule-ads: { enabled: false, schedule: "0 8 * * *", var: "" } # daily 08:00 UTC — paid ads via AdManage.ai. var: empty=schedule ad launches across Meta/TikTok/Snapchat/Pinterest/LinkedIn from config.yaml (PAUSED by default) | create=provision Meta campaigns/ad sets on-demand from config.create.yaml (PAUSED, IDs written back to state so the schedule branch can launch into them; folds in create-campaign)
@@ -115,7 +115,7 @@ skills:
   inbox-triage: { enabled: true, schedule: "30 11 * * *", model: "gpt-luna" } # daily 11:30 — GitHub notification-inbox triage (maintainer replies to disclosures/advisories/mentions)
 
   # Dev & repo
-  feature: { enabled: true, schedule: "0 10 * * 1,3,5", var: "external:Aluma/universal-context-hub --fix-issues", model: "gpt-sol" } # build a feature + open PR. var: watched (default) | external:<owner/repo> | dormant[:<owner/repo>], append --fix-issues (folds in external-feature/repo-revive). GH_GLOBAL for external.
+  feature: { enabled: false, schedule: "0 10 * * 1,3,5", var: "", model: "gpt-sol" } # disabled until an active non-frozen build repo is configured
 
   # Research & content
   write-tweet: { enabled: false, schedule: "0 21 * * *", var: "" } # tweet studio. var: empty=drafts (10×5 tiers) | thread [topic] | remix [window]. Optional XAI_API_KEY (required for remix).
