@@ -4,3 +4,4 @@ date,skill,model,input_tokens,output_tokens,cache_read,cache_creation
 2026-07-08,heartbeat,claude-opus-4-8,8844,18139,968041,76408
 2026-07-10,pr-review,claude-opus-4-8,34,4920,1139327,75864
 2026-07-10,auto-merge,gpt-terra,291178,2606,0,0
+2026-07-10,pr-review,claude-opus-4-8,22,3410,682057,72824

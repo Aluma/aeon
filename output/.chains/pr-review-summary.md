@@ -1,5 +1,3 @@
-ℹ️ PR Review — vybose-context-hub
-
 *PR Review — Aluma/vybose-context-hub — 2026-07-10*
 
 Reviewed 1, skipped 0.
