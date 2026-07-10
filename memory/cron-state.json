@@ -30,12 +30,13 @@
   },
   "pr-review": {
     "last_dispatch": "2026-07-08T22:02:07Z",
-    "last_status": "configured",
-    "total_runs": 0,
-    "total_successes": 0,
+    "last_status": "success",
+    "total_runs": 1,
+    "total_successes": 1,
     "total_failures": 0,
     "consecutive_failures": 0,
-    "success_rate": 0
+    "success_rate": 1,
+    "last_success": "2026-07-10T20:33:29Z"
   },
   "github-monitor": {
     "last_dispatch": "2026-07-08T22:02:07Z",
