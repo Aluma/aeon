@@ -140,5 +140,15 @@
     "consecutive_failures": 0,
     "success_rate": 1,
     "last_quality_score": 5
+  },
+  "vch-plan-review": {
+    "last_status": "failed",
+    "last_failed": "2026-07-10T22:46:43Z",
+    "total_runs": 1,
+    "total_successes": 0,
+    "total_failures": 1,
+    "consecutive_failures": 1,
+    "success_rate": 0,
+    "last_error": " "
   }
 }
