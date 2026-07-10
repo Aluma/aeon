@@ -9,13 +9,19 @@ on:
   pull_request:
     paths:
       - 'scripts/**'
+      - 'config/**'
+      - 'memory/watched-repos.md'
       - 'aeon.yml'
+      - '.github/workflows/aeon.yml'
       - '.github/workflows/ci-tests.yml'
   push:
     branches: [main]
     paths:
       - 'scripts/**'
+      - 'config/**'
+      - 'memory/watched-repos.md'
       - 'aeon.yml'
+      - '.github/workflows/aeon.yml'
   workflow_dispatch:
 
 permissions:
@@ -40,6 +46,10 @@ jobs:
         run: python3 scripts/tests/test_prune_skills.py
       - name: capability mode tests
         run: bash scripts/tests/test_skill_mode.sh
+      - name: repository target policy tests
+        run: bash scripts/tests/test_repository_target_policy.sh
+      - name: LLM gateway model routing tests
+        run: bash scripts/tests/test_llm_gateway_models.sh
       - name: skill-pack manifest validation tests
         run: bash scripts/tests/test_validate_pack.sh
       - name: grok harness runner tests

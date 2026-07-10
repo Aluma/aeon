@@ -28,6 +28,10 @@ on:
           - gpt-sol
           - gpt-terra
           - gpt-luna
+          - glm
+          - qwen-max
+          - deepseek
+          - qwen-plus
           - grok-composer-2.5-fast
           - grok-build
       harness:
@@ -208,6 +212,20 @@ jobs:
           [ ${#MISSING[@]} -gt 0 ] && echo "::warning::Secrets not set: ${MISSING[*]} — skill may fail or produce incomplete results"
           exit 0
 
+      - name: Enforce repository target policy
+        id: target_policy
+        if: steps.work.outputs.mode != ''
+        env:
+          SKILL: ${{ steps.skill.outputs.name }}
+          INPUT_TARGET: ${{ inputs.var }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          ISSUE_BODY: ${{ github.event.issue.body }}
+          INPUT_HARNESS: ${{ inputs.harness }}
+        run: |
+          TARGET_CONTEXT=$(printf '%s\n%s\n%s\n' "$INPUT_TARGET" "$ISSUE_TITLE" "$ISSUE_BODY")
+          bash scripts/repository-target-policy.sh check "$SKILL" "$TARGET_CONTEXT" "$INPUT_HARNESS"
+          echo "vch=$(bash scripts/repository-target-policy.sh is-vch "$TARGET_CONTEXT")" >> "$GITHUB_OUTPUT"
+
       - name: Run pre-fetch scripts
         if: steps.work.outputs.mode != ''
         env:
@@ -244,7 +262,7 @@ jobs:
       # ──────────────────────────────────────────────────────────────────────
       - name: Fleet Watcher preflight
         id: fleet_preflight
-        if: steps.work.outputs.mode != '' && env.FLEET_ENDPOINT != '' && env.FLEET_TOKEN != ''
+        if: steps.work.outputs.mode != '' && steps.target_policy.outputs.vch != 'true' && env.FLEET_ENDPOINT != '' && env.FLEET_TOKEN != ''
         env:
           SKILL:     ${{ steps.skill.outputs.name }}
           SKILL_VAR: ${{ inputs.var }}
@@ -413,6 +431,7 @@ jobs:
             HARNESS="${CONFIG_HARNESS:-claude}"
           fi
           if [ "$HARNESS" != "grok" ]; then HARNESS="claude"; fi   # unknown value → safe default (use `if`, not `&&`, under set -e)
+          bash scripts/repository-target-policy.sh check "$SKILL_NAME" "$SKILL_VAR" "$HARNESS"
           # On the grok harness a claude-* model id is meaningless — fall back to
           # grok's default (grok-composer-2.5-fast) unless an explicit grok model
           # was chosen. run-grok.sh omits --model for a non-grok value as a safety net.
@@ -594,10 +613,13 @@ jobs:
                 OPENROUTER_EFFORT="${OPENROUTER_MODEL_EFFORT:-}"
                 case "$BASE_MODEL" in
                   claude-opus-*) OPENROUTER_EFFORT="${OPENROUTER_MODEL_OPUS_EFFORT:-${OPENROUTER_EFFORT:-max}}" ;;
-                  claude-sonnet-*|gpt-sol) OPENROUTER_EFFORT="${OPENROUTER_MODEL_SOL_EFFORT:-${OPENROUTER_MODEL_GPT_EFFORT:-${OPENROUTER_MODEL_SONNET_EFFORT:-${OPENROUTER_EFFORT:-max}}}}" ;;
+                  claude-sonnet-*|gpt-sol) OPENROUTER_EFFORT="${OPENROUTER_MODEL_SOL_EFFORT:-${OPENROUTER_MODEL_GPT_EFFORT:-${OPENROUTER_MODEL_SONNET_EFFORT:-high}}}" ;;
                   claude-fable-*|gpt-terra) OPENROUTER_EFFORT="${OPENROUTER_MODEL_TERRA_EFFORT:-${OPENROUTER_MODEL_GPT_EFFORT:-${OPENROUTER_EFFORT:-high}}}" ;;
                   gpt-luna) OPENROUTER_EFFORT="${OPENROUTER_MODEL_LUNA_EFFORT:-${OPENROUTER_EFFORT:-medium}}" ;;
                   claude-haiku-*) OPENROUTER_EFFORT="${OPENROUTER_MODEL_HAIKU_EFFORT:-${OPENROUTER_EFFORT:-medium}}" ;;
+                  glm) OPENROUTER_EFFORT="${OPENROUTER_MODEL_GLM_EFFORT:-high}" ;;
+                  deepseek) OPENROUTER_EFFORT="${OPENROUTER_MODEL_DEEPSEEK_EFFORT:-high}" ;;
+                  qwen-max|qwen-plus) OPENROUTER_EFFORT="" ;;
                 esac
                 case "$OPENROUTER_EFFORT" in
                   low|medium|high|xhigh|max) EFFORT_FLAG=(--effort "$OPENROUTER_EFFORT") ;;
@@ -681,7 +703,7 @@ jobs:
       # for taint chain detection.
       # ──────────────────────────────────────────────────────────────────────
       - name: Fleet Watcher postflight
-        if: always() && steps.work.outputs.mode != '' && env.FLEET_ENDPOINT != '' && env.FLEET_TOKEN != ''
+        if: always() && steps.work.outputs.mode != '' && steps.target_policy.outputs.vch != 'true' && env.FLEET_ENDPOINT != '' && env.FLEET_TOKEN != ''
         env:
           SKILL:       ${{ steps.skill.outputs.name }}
           RUN_OUTCOME: ${{ steps.run.outcome }}

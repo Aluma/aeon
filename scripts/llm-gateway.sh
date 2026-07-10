@@ -196,19 +196,23 @@ case "${GATEWAY:-direct}" in
     openrouter_terra="${OPENROUTER_MODEL_GPT_TERRA:-openai/gpt-5.6-terra}"
     openrouter_luna="${OPENROUTER_MODEL_GPT_LUNA:-openai/gpt-5.6-luna}"
     openrouter_coder="${OPENROUTER_MODEL_GPT_PRO:-${OPENROUTER_MODEL_SONNET:-$openrouter_sol}}"
-    openrouter_haiku="${OPENROUTER_MODEL_HAIKU:-deepseek/deepseek-v4-pro}"
-    openrouter_multimodal="${OPENROUTER_MODEL_MULTIMODAL:-qwen/qwen3.7-plus}"
+    openrouter_glm="${OPENROUTER_MODEL_GLM:-z-ai/glm-5.2}"
+    openrouter_qwen_max="${OPENROUTER_MODEL_QWEN_MAX:-qwen/qwen3.7-max}"
+    openrouter_deepseek="${OPENROUTER_MODEL_DEEPSEEK:-${OPENROUTER_MODEL_HAIKU:-deepseek/deepseek-v4-pro}}"
+    openrouter_multimodal="${OPENROUTER_MODEL_QWEN_PLUS:-${OPENROUTER_MODEL_MULTIMODAL:-qwen/qwen3.7-plus}}"
     export ANTHROPIC_DEFAULT_OPUS_MODEL="$openrouter_opus"
     export ANTHROPIC_DEFAULT_SONNET_MODEL="$openrouter_coder"
-    export ANTHROPIC_DEFAULT_HAIKU_MODEL="$openrouter_haiku"
+    export ANTHROPIC_DEFAULT_HAIKU_MODEL="$openrouter_deepseek"
     requested_model="${MODEL:-}"
     case "$requested_model" in
       ""|claude-opus-*|opus|max|orchestrator) MODEL="$openrouter_opus" ;;
       claude-sonnet-*|gpt|coder|dev|gpt-sol|sol) MODEL="$openrouter_coder" ;;
       claude-fable-*|gpt-terra|terra|review|test|audit|merge) MODEL="$openrouter_terra" ;;
       gpt-luna|luna|triage|monitor|routine) MODEL="$openrouter_luna" ;;
-      claude-haiku-*|haiku|deepseek|cheap|analysis) MODEL="$openrouter_haiku" ;;
-      qwen|multimodal|vision) MODEL="$openrouter_multimodal" ;;
+      glm|long-context|synthesis) MODEL="$openrouter_glm" ;;
+      qwen-max|bulk-analysis|bulk-tests) MODEL="$openrouter_qwen_max" ;;
+      claude-haiku-*|haiku|deepseek|cheap|analysis) MODEL="$openrouter_deepseek" ;;
+      qwen|qwen-plus|multimodal|vision) MODEL="$openrouter_multimodal" ;;
       */*) MODEL="$requested_model" ;; # explicit OpenRouter slug
       *) MODEL="$openrouter_opus" ;;
     esac

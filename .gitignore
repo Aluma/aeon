@@ -9,6 +9,9 @@
 # Claude Code local state
 .claude/
 
+# OMX local orchestration state
+.omx/
+
 # Caches — prefetch scripts write these, skills read them; regenerated every run
 # (.xai-cache, .treasury-cache, .star-cache, .github-releases-cache, …)
 .*-cache/
@@ -23,6 +26,7 @@
 skills.lock
 
 # Scratch / temp files
+.notify-body.md
 tmp_*
 *.tmp
 .tmp-*

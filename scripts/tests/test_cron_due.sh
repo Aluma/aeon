@@ -1,20 +1,26 @@
 #!/usr/bin/env bash
 # Tests for scripts/cron-due.sh — the exact-slot "debt" scheduler decision.
 # Run:  bash scripts/tests/test_cron_due.sh
-# On macOS/BSD:  AEON_DATE=gdate bash scripts/tests/test_cron_due.sh
 set -uo pipefail
 
 SCRIPT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/cron-due.sh"
-DATE="${AEON_DATE:-date}"
-[ -n "${AEON_DATE:-}" ] && export AEON_DATE
+
+iso_epoch() {
+  python3 - "$1" <<'PY'
+from datetime import datetime
+import sys
+
+print(int(datetime.fromisoformat(sys.argv[1].replace('Z', '+00:00')).timestamp()))
+PY
+}
 
 pass=0; fail=0
 # check <desc> <schedule> <now-iso> <last-iso|never> <catchup_hours> <expect: due|skip>
 check() {
   local desc="$1" sched="$2" now="$3" last="$4" catch="$5" expect="$6"
   local now_e last_e out rc
-  now_e=$("$DATE" -u -d "$now" +%s)
-  if [ "$last" = "never" ]; then last_e=0; else last_e=$("$DATE" -u -d "$last" +%s); fi
+  now_e=$(iso_epoch "$now")
+  if [ "$last" = "never" ]; then last_e=0; else last_e=$(iso_epoch "$last"); fi
   if out=$(bash "$SCRIPT" "$sched" "$now_e" "$last_e" "$catch" 2>/dev/null); then rc=due; else rc=skip; fi
   if [ "$rc" = "$expect" ]; then
     pass=$((pass+1))

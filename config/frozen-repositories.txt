@@ -1,0 +1,3 @@
+# One case-insensitive owner/repo identifier per line.
+# Removing an entry is an explicit governance change and must be reviewed.
+Aluma/universal-context-hub

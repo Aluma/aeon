@@ -11,10 +11,10 @@ skills:
 
 
   # --- Mid-morning (9 AM UTC) ---
-  pr-triage: { enabled: false, schedule: "30 9 * * *", var: "", model: "gpt-luna" } # disabled until an active non-frozen build repo is configured
-  pr-review: { enabled: false, schedule: "0 13 * * *", var: "", model: "claude-opus-4-8" } # independent reviewer: Opus checks GPT-built PRs once an active repo is configured
-  auto-merge: { enabled: false, schedule: "0 14 * * *", var: "", model: "gpt-terra" } # full-autonomy merge gate; disabled until an active non-frozen build repo is configured
-  github-monitor: { enabled: true, schedule: "0 9 * * *", var: "Aluma/aeon", model: "gpt-luna" } # watch automation repo only until an active build repo is configured
+  pr-triage: { enabled: true, schedule: "30 9 * * *", var: "Aluma/vybose-context-hub", model: "gpt-luna", attest: false } # routine issue/PR classification on the active VCH repo
+  pr-review: { enabled: true, schedule: "0 13 * * *", var: "Aluma/vybose-context-hub", model: "claude-opus-4-8", attest: false } # independent frontier review; never substitutes for deterministic checks
+  auto-merge: { enabled: true, schedule: "0 14 * * *", var: "Aluma/vybose-context-hub", model: "gpt-terra", attest: false } # merge only after branch protection and required checks report clean
+  github-monitor: { enabled: true, schedule: "0 9 * * *", var: "Aluma/vybose-context-hub", model: "gpt-luna" } # active VCH issue, PR, and workflow monitoring
   github-trending: { enabled: false, schedule: "0 9 * * *", var: "" } # trending repos + Hugging Face Hub. var: empty=GitHub | <lang> | hf | hf:{models,datasets,spaces}
 
   # --- Midday (12 PM UTC) ---
@@ -44,7 +44,7 @@ skills:
 
   # --- Late afternoon (4 PM UTC) ---
   changelog: { enabled: true, schedule: "0 16 * * 5", var: "Aluma/aeon" } # changelog from recent commits/PRs. var: empty/owner/repo=in-repo | push-to:owner/website-repo=cross-repo changelog PR (needs GH_GLOBAL)
-  vuln-scanner: { enabled: false, schedule: "0 16 * * 6", var: "", model: "claude-opus-4-8" } # disabled until an active non-frozen build repo is configured
+  vuln-scanner: { enabled: true, schedule: "0 16 * * 6", var: "Aluma/vybose-context-hub", model: "claude-opus-4-8", attest: false } # weekly independent security review of the active VCH repo
   deploy-prototype: { enabled: false, schedule: "workflow_dispatch", var: "" } # on-demand — build app and deploy to Vercel
   base-mcp: { enabled: false, schedule: "workflow_dispatch", var: "" } # on-demand — Base Account access via the Base MCP server (mcp.base.org)
   autoresearch: { enabled: false, schedule: "workflow_dispatch", var: "" } # on-demand — set var to skill name to evolve
@@ -62,10 +62,10 @@ skills:
   # --- Content distribution (runs 30 min after article-generating skills) ---
 
   # --- Evening / meta (6 PM UTC) ---
-  strategy-builder: { enabled: true, schedule: "workflow_dispatch", var: "goal=Build VCH as a production-quality, local-first context infrastructure layer with strong quality gates, no shortcuts, no reward hacking, and executable proof for every autonomous PR. Do not target frozen repos." } # on-demand — draft STRATEGY.md (north-star / priorities / audience / constraints) from a brief + repo README + memory. var: bare goal text, or structured brief "repo=owner/repo | links=url1,url2 | goal=free text". Powers the dashboard Strategy → Build my strategy button. No API key needed.
+  strategy-builder: { enabled: true, schedule: "workflow_dispatch", var: "goal=Build VCH as production-quality local-first context infrastructure. Finish agentic-engineering cleanup before feature work; use only Aeon and OMX for orchestration; require deterministic repository checks, cross-model review, no shortcuts, and no reward hacking. Never target frozen repos." } # on-demand — draft STRATEGY.md (north-star / priorities / audience / constraints) from a brief + repo README + memory. var: bare goal text, or structured brief "repo=owner/repo | links=url1,url2 | goal=free text". Powers the dashboard Strategy → Build my strategy button. No API key needed.
   skill-health: { enabled: true, schedule: "0 18 * * *", var: "analytics:168", model: "gpt-luna" } # self-healing health audit + analytics. var: empty=health (files/resolves issues) | <skill>=single | analytics[:hours]=fleet run/pass-rate metrics (folds in skill-analytics)
 
-  self-improve: { enabled: true, schedule: "0 19 * * 0", var: "audit:vch-quality", model: "gpt-terra" } # weekly — improve the agent, or audit it. var: empty/improve[:focus]=propose+apply one fix | audit[:focus]=review what ran/failed (folds in self-review)
+  self-improve: { enabled: true, schedule: "0 19 * * 0", var: "audit:vch-agentic-alignment", model: "gpt-terra" } # weekly — audit whether VCH automation remains aligned, non-vacuous, and free of stale repo targets
 
   action-converter: { enabled: false, schedule: "0 18 * * *" }
   skill-repair: { enabled: true, schedule: "reactive", var: "", model: "gpt-sol" } # reactive — auto-fix failing skills
@@ -115,7 +115,7 @@ skills:
   inbox-triage: { enabled: true, schedule: "30 11 * * *", model: "gpt-luna" } # daily 11:30 — GitHub notification-inbox triage (maintainer replies to disclosures/advisories/mentions)
 
   # Dev & repo
-  feature: { enabled: false, schedule: "0 10 * * 1,3,5", var: "", model: "gpt-sol" } # disabled until an active non-frozen build repo is configured
+  feature: { enabled: true, schedule: "0 10 * * 1,3,5", var: "external:Aluma/vybose-context-hub --fix-issues", model: "gpt-sol", attest: false } # issue-driven implementation; PR-only, with review and protected merge downstream
 
   # Research & content
   write-tweet: { enabled: false, schedule: "0 21 * * *", var: "" } # tweet studio. var: empty=drafts (10×5 tiers) | thread [topic] | remix [window]. Optional XAI_API_KEY (required for remix).
@@ -178,6 +178,10 @@ chains:
 #   gpt-sol   -> OpenRouter GPT-5.6 Sol for high-stakes dev/repair work
 #   gpt-terra -> OpenRouter GPT-5.6 Terra for balanced review/audit/merge ops
 #   gpt-luna  -> OpenRouter GPT-5.6 Luna for routine monitoring/triage
+#   glm       -> OpenRouter GLM 5.2 for long-context synthesis
+#   qwen-max  -> OpenRouter Qwen 3.7 Max for bulk analysis and test drafting
+#   deepseek  -> OpenRouter DeepSeek V4 Pro for checkable token-heavy analysis
+#   qwen-plus -> OpenRouter Qwen 3.7 Plus for multimodal work
 # plus Claude handles: claude-opus-4-8, claude-fable-5, claude-sonnet-5,
 # claude-sonnet-4-6, claude-haiku-4-5-20251001
 # (Grok harness models: grok-composer-2.5-fast — fast single-agent default;

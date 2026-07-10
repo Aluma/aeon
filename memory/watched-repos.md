@@ -3,10 +3,8 @@ type: Reference
 ---
 
 # Watched Repos
+- Aluma/vybose-context-hub
 - Aluma/aeon
-
-## Frozen Repos
-- Aluma/universal-context-hub
 
 ## Trusted Authors
 - Aluma
