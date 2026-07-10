@@ -117,5 +117,14 @@
     "total_failures": 0,
     "consecutive_failures": 0,
     "success_rate": 0
+  },
+  "auto-merge": {
+    "last_status": "failed",
+    "last_failed": "2026-07-10T07:21:58Z",
+    "total_runs": 1,
+    "total_successes": 0,
+    "total_failures": 1,
+    "consecutive_failures": 1,
+    "success_rate": 0
   }
 }
