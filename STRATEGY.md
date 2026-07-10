@@ -34,6 +34,9 @@ The primary audience is the operator: technical, time-constrained, quality-sensi
 - Every PR must state behavior changed, exact checks run, verification output, known gaps, and why no shortcut/mock/hardcoded path was used.
 - Frontier models are the default for orchestration and implementation quality. Use cheaper token-heavy models only when their output can be independently checked by tests, static analysis, or a frontier-model review.
 - Full autonomy does not mean unchecked autonomy: GPT-built work must pass CI, unresolved-conversation gates, deterministic guards, and an independent review path before `auto-merge` may ship it.
+- A VCH `feature` run may execute only against one open issue labelled `vch:implementation`, `vch:plan-approved`, and `ai-build`, with the complete required issue contract. The deterministic program gate must skip or reject every other target before model execution.
+- VCH planning authors cannot approve their own artifacts. `vch-program` authors audits, specifications, and bounded issues; the separately modelled `vch-plan-review` role alone may grant build authorization.
+- Sprint 6 and Sprint 7 require accepted repository-native specifications and test plans before any implementation issue or product code is created.
 - Aeon and OMX are the only approved VCH orchestration integrations. Generated orchestrator state is observability data, not proof of product correctness.
 
 ## Optimize for / avoid

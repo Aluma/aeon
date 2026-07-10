@@ -104,12 +104,6 @@ jobs:
     timeout-minutes: 30
 
     steps:
-      - name: Early checkout
-        if: github.event_name == 'issues'
-        uses: actions/checkout@v7
-        with:
-          token: ${{ secrets.GH_GLOBAL || secrets.GITHUB_TOKEN }}
-
       - name: Determine skill
         id: skill
         env:
@@ -125,21 +119,41 @@ jobs:
             echo "name=feature" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Check if there's work
-        id: work
-        run: |
-          if [ -n "${{ steps.skill.outputs.name }}" ]; then
-            echo "mode=skill" >> "$GITHUB_OUTPUT"
-            echo "label=${{ steps.skill.outputs.name }}" >> "$GITHUB_OUTPUT"
-          else
-            echo "Nothing to do"
-          fi
-
       - name: Checkout repo
-        if: steps.work.outputs.mode != ''
         uses: actions/checkout@v7
         with:
           token: ${{ secrets.GH_GLOBAL || secrets.GITHUB_TOKEN }}
+
+      - name: Check if there's work
+        id: work
+        env:
+          GH_TOKEN: ${{ secrets.GH_GLOBAL || secrets.GITHUB_TOKEN }}
+          SKILL: ${{ steps.skill.outputs.name }}
+          INPUT_VAR: ${{ inputs.var }}
+        run: |
+          if [ -n "$SKILL" ]; then
+            set +e
+            NORMALIZED_VAR=$(bash scripts/vch-program-gate.sh "$SKILL" "$INPUT_VAR")
+            GATE_STATUS=$?
+            set -e
+            if [ "$GATE_STATUS" -eq 3 ]; then
+              echo "::notice::No approved VCH implementation issue is ready; skipping before model execution."
+              exit 0
+            elif [ "$GATE_STATUS" -ne 0 ]; then
+              echo "::error::VCH program gate rejected this run."
+              exit "$GATE_STATUS"
+            fi
+            echo "mode=skill" >> "$GITHUB_OUTPUT"
+            echo "label=$SKILL" >> "$GITHUB_OUTPUT"
+            DELIMITER="AEON_VAR_$(openssl rand -hex 8)"
+            {
+              echo "var<<$DELIMITER"
+              printf '%s\n' "$NORMALIZED_VAR"
+              echo "$DELIMITER"
+            } >> "$GITHUB_OUTPUT"
+          else
+            echo "Nothing to do"
+          fi
 
       - name: Configure git identity
         if: steps.work.outputs.mode != ''
@@ -217,7 +231,7 @@ jobs:
         if: steps.work.outputs.mode != ''
         env:
           SKILL: ${{ steps.skill.outputs.name }}
-          INPUT_TARGET: ${{ inputs.var }}
+          INPUT_TARGET: ${{ steps.work.outputs.var }}
           ISSUE_TITLE: ${{ github.event.issue.title }}
           ISSUE_BODY: ${{ github.event.issue.body }}
           INPUT_HARNESS: ${{ inputs.harness }}
@@ -233,7 +247,7 @@ jobs:
           XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           REPLICATE_API_TOKEN: ${{ secrets.REPLICATE_API_TOKEN }}
-          SKILL_VAR: ${{ inputs.var }}
+          SKILL_VAR: ${{ steps.work.outputs.var }}
         run: |
           # Run all scripts/prefetch-*.sh before Claude starts (outside sandbox).
           # Each script receives the skill name and var as arguments.
@@ -265,7 +279,7 @@ jobs:
         if: steps.work.outputs.mode != '' && steps.target_policy.outputs.vch != 'true' && env.FLEET_ENDPOINT != '' && env.FLEET_TOKEN != ''
         env:
           SKILL:     ${{ steps.skill.outputs.name }}
-          SKILL_VAR: ${{ inputs.var }}
+          SKILL_VAR: ${{ steps.work.outputs.var }}
         run: |
           set -euo pipefail
           OP_ID="${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-pre"
@@ -399,7 +413,7 @@ jobs:
           BEAMR_NETWORK: ${{ vars.BEAMR_NETWORK }}
           BEAMR_MAX_PAY_USDC: ${{ vars.BEAMR_MAX_PAY_USDC }}
           JSONRENDER_ENABLED: ${{ vars.JSONRENDER_ENABLED || 'true' }}
-          SKILL_VAR: ${{ inputs.var }}
+          SKILL_VAR: ${{ steps.work.outputs.var }}
           SKILL_NAME: ${{ steps.skill.outputs.name }}
           INPUT_MODEL: ${{ inputs.model }}
           INPUT_HARNESS: ${{ inputs.harness }}

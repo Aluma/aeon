@@ -9,6 +9,9 @@
 skills:
   # --- Morning aggregation (7 AM UTC) ---
 
+  # --- VCH program control (planning before implementation) ---
+  vch-program: { enabled: true, schedule: "15 8 * * *", var: "Aluma/vybose-context-hub", model: "claude-opus-4-8", attest: false } # authors one audit/spec/issue transition; forbidden from product code or self-approval
+  vch-plan-review: { enabled: true, schedule: "15 9 * * *", var: "Aluma/vybose-context-hub", model: "gpt-terra", attest: false } # independent plan gate; only this role may authorize ai-build
 
   # --- Mid-morning (9 AM UTC) ---
   pr-triage: { enabled: true, schedule: "30 9 * * *", var: "Aluma/vybose-context-hub", model: "gpt-luna", attest: false } # routine issue/PR classification on the active VCH repo
@@ -115,7 +118,7 @@ skills:
   inbox-triage: { enabled: true, schedule: "30 11 * * *", model: "gpt-luna" } # daily 11:30 — GitHub notification-inbox triage (maintainer replies to disclosures/advisories/mentions)
 
   # Dev & repo
-  feature: { enabled: true, schedule: "0 10 * * 1,3,5", var: "external:Aluma/vybose-context-hub --fix-issues", model: "gpt-sol", attest: false } # issue-driven implementation; PR-only, with review and protected merge downstream
+  feature: { enabled: true, schedule: "0 10 * * 1,3,5", var: "external:Aluma/vybose-context-hub --fix-issues", model: "gpt-sol", attest: false } # deterministic gate selects one independently approved implementation issue; PR-only
 
   # Research & content
   write-tweet: { enabled: false, schedule: "0 21 * * *", var: "" } # tweet studio. var: empty=drafts (10×5 tiers) | thread [topic] | remix [window]. Optional XAI_API_KEY (required for remix).

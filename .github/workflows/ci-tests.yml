@@ -48,6 +48,8 @@ jobs:
         run: bash scripts/tests/test_skill_mode.sh
       - name: repository target policy tests
         run: bash scripts/tests/test_repository_target_policy.sh
+      - name: VCH program gate tests
+        run: bash scripts/tests/test_vch_program_gate.sh
       - name: LLM gateway model routing tests
         run: bash scripts/tests/test_llm_gateway_models.sh
       - name: skill-pack manifest validation tests
