@@ -27,10 +27,11 @@ function readGitHubIssueEvents(issueNumber: string, runId: string) {
   if (!repo) throw new Error('GitHub repo could not be resolved')
   const raw = execFileSync(
     'gh',
-    ['api', `repos/${repo}/issues/${issueNumber}/comments?per_page=100`],
+    ['api', '--paginate', '--slurp', `repos/${repo}/issues/${issueNumber}/comments?per_page=100`],
     { stdio: 'pipe', cwd: REPO_ROOT, timeout: 15000, maxBuffer: 10 * 1024 * 1024 },
   ).toString()
-  const comments = JSON.parse(raw) as Array<{ body?: string }>
+  const pages = JSON.parse(raw) as Array<Array<{ body?: string }>>
+  const comments = pages.flat()
   return parseAeonRunEvents(
     comments.map((comment) => parseIssueCommentBody(comment.body || '')).filter(Boolean),
     runId,
